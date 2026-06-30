@@ -1,0 +1,82 @@
+name: Bump consumer apps to a new finley-core release
+
+# When a version tag (vX.Y.Z) is pushed here, open a PR in BOTH frontend apps
+# bumping their @goflexibl/finley-core dependency to that tag. Human-merged —
+# this is the single propagation point so a Finley change reaches both surfaces.
+#
+# Requires repo secret CUSTOMER_REPO_TOKEN: a PAT/App token with contents +
+# pull_requests write on GoFlexibl/ui-admin-portal AND GoFlexibl/ui-app-new.
+# The job skips gracefully until the secret is set.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to pin (e.g. v1.0.0)'
+        required: true
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo:
+          - GoFlexibl/ui-admin-portal
+          - GoFlexibl/ui-app-new
+    steps:
+      - name: Resolve tag
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: Check cross-repo token is configured
+        run: |
+          if [ -z "${{ secrets.CUSTOMER_REPO_TOKEN }}" ]; then
+            echo "::warning::CUSTOMER_REPO_TOKEN not set — skipping ${{ matrix.repo }}. Add a PAT/App token with contents+pull_requests write on the consumer repos."
+            echo "SKIP=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Checkout consumer repo
+        if: env.SKIP != 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          token: ${{ secrets.CUSTOMER_REPO_TOKEN }}
+          path: consumer
+
+      - name: Pin @goflexibl/finley-core to ${{ env.TAG }}
+        if: env.SKIP != 'true'
+        working-directory: consumer
+        run: |
+          ref="github:GoFlexibl/finley-core#${TAG}"
+          tmp="$(mktemp)"
+          jq --arg ref "$ref" '.dependencies["@goflexibl/finley-core"] = $ref' package.json > "$tmp"
+          mv "$tmp" package.json
+          echo "Set @goflexibl/finley-core -> $ref"
+
+      - name: Open a PR if the dependency changed
+        if: env.SKIP != 'true'
+        working-directory: consumer
+        env:
+          GH_TOKEN: ${{ secrets.CUSTOMER_REPO_TOKEN }}
+        run: |
+          if git diff --quiet -- package.json; then
+            echo "${{ matrix.repo }} already on ${TAG} — nothing to do."
+            exit 0
+          fi
+          branch="finley-core-bump/${TAG}"
+          git config user.name "finley-core-sync[bot]"
+          git config user.email "noreply@goflexibl.com"
+          git checkout -b "$branch"
+          git add package.json
+          git commit -m "Finley: bump @goflexibl/finley-core to ${TAG}"
+          git push --force-with-lease origin "$branch"
+          gh pr create --repo "${{ matrix.repo }}" \
+            --head "$branch" --base master \
+            --title "Finley: bump @goflexibl/finley-core to ${TAG}" \
+            --body "Automated propagation of the shared Finley package (\`${TAG}\`). Merging brings this app to the latest shared Finley logic + rendering. **Run \`npm install\` after merge to refresh package-lock.json.** Review before merging." \
+            || echo "A PR for this bump may already exist."
