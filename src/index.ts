@@ -72,3 +72,11 @@ export { FinleyDataRender } from './components/FinleyDataRender';
 export type { FinleyDataRenderProps, FinleyCard } from './components/FinleyDataRender';
 export { DEFAULT_CHART_THEME, resolveChartTheme } from './components/chartTheme';
 export type { FinleyChartTheme } from './components/chartTheme';
+
+// Designed-card framework — one block renderer + domain builders, shared by
+// the admin portal and the customer app. See finleySkin for the scoped CSS.
+export { FinleyBlocks, planBlocks, summaryBlocks, breakdownBlocks, reconBlocks } from './components/finleyBlocks';
+export type { Block } from './components/finleyBlocks';
+
+// Scoped CSS design system (.fly-skin) — inject via a <style> tag in the panel root.
+export { FINLEY_SKIN } from './finleySkin';
