@@ -1,6 +1,9 @@
 // @goflexibl/finley-core — single source of truth for Finley, consumed by both
 // the admin portal (ui-admin-portal) and the customer app (ui-app-new).
 
+// Version (shown in each app's Finley header so you can see which build is live)
+export { FINLEY_CORE_VERSION } from './version';
+
 // Types
 export type {
   FinleyResponseType,
