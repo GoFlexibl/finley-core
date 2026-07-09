@@ -4,4 +4,4 @@
 // KEEP IN SYNC with the "version" field in package.json — bump both together on
 // every release/tag. (Single literal on purpose: no build-time magic that could
 // silently drift or break the bundle.)
-export const FINLEY_CORE_VERSION = '0.4.0';
+export const FINLEY_CORE_VERSION = '0.5.0';
