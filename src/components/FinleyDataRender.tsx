@@ -57,6 +57,9 @@ export interface FinleyDataRenderProps {
   enableSort?: boolean;
   /** Render app-specific actions under the card (e.g. admin's Pin to Home). */
   renderActions?: (card: FinleyCard) => React.ReactNode;
+  /** Show the "View query" (raw SQL) disclosure. Default on for the admin portal;
+   * the customer app passes false so end users never see the generated SQL. */
+  showQuery?: boolean;
 }
 
 /** A recharts `<Tooltip>` honoring the theme's custom content when provided. */
@@ -378,12 +381,15 @@ export const FinleyDataRender: React.FC<FinleyDataRenderProps> = ({
   chartTheme,
   enableSort = false,
   renderActions,
+  showQuery = true,
 }) => {
   const theme = resolveChartTheme(chartTheme);
+  // Gate the raw-SQL disclosure: hidden entirely in the customer app.
+  const sqlNode = showQuery && sql ? <ViewSql sql={sql} /> : null;
 
   // `text` responses (and anything with no payload) render nothing here.
   if (!responseType || responseType === 'text') {
-    return sql ? <ViewSql sql={sql} /> : null;
+    return sqlNode;
   }
 
   if (data == null) {
@@ -392,7 +398,7 @@ export const FinleyDataRender: React.FC<FinleyDataRenderProps> = ({
         <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
           No data found for your query.
         </Typography>
-        {sql ? <ViewSql sql={sql} /> : null}
+        {sqlNode}
       </Box>
     );
   }
@@ -424,7 +430,7 @@ export const FinleyDataRender: React.FC<FinleyDataRenderProps> = ({
     <Box sx={{ width: '100%' }}>
       {chart}
       {actions ? <Box sx={{ mt: 1 }}>{actions}</Box> : null}
-      {sql ? <ViewSql sql={sql} /> : null}
+      {sqlNode}
     </Box>
   );
 };
