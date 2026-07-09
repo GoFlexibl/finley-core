@@ -26,6 +26,14 @@ const PCT_COL_RE = /(^|_)(pct|percent|percentage|rate|margin)$/i;
 export const isPctColumn = (col?: string): boolean =>
   !!col && PCT_COL_RE.test(col.trim());
 
+// Identifier columns (MID, *_id, account, mcc, bin, terminal) are LABELS, not
+// quantities: render verbatim so a 15-digit MID stays "936200017309709", never
+// "936,200,017,309,709" or scientific notation. Same idea as the year-column rule.
+// Numeric grouping is a quantity affordance; applying it to an ID corrupts it.
+const ID_COL_RE = /(^|_)(mid|id|account|acct|mcc|bin|terminal)$/i;
+export const isIdColumn = (col?: string): boolean =>
+  !!col && ID_COL_RE.test(col.trim());
+
 // The Redshift Data API returns DECIMAL columns as strings, so values can arrive
 // as e.g. "5529540.380000". Coerce number-or-numeric-string to a number (null if
 // not numeric) so formatting works regardless of which backend served the value.
@@ -41,6 +49,8 @@ export const asNumber = (v: unknown): number | null => {
 /** Format a single value for display, optionally aware of its column name. */
 export const formatCell = (value: unknown, column?: string): string => {
   if (value == null) return '—';
+  // Identifiers render exactly as they arrive — no grouping, no sci-notation.
+  if (isIdColumn(column)) return String(value);
   const n = asNumber(value);
   if (n !== null) {
     if (isYearColumn(column)) return String(Math.trunc(n));
