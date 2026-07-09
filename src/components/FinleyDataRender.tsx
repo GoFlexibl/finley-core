@@ -13,7 +13,7 @@ import {
   Button,
   Paper,
 } from '@mui/material';
-import { ExpandMore, ExpandLess, Code } from '@mui/icons-material';
+import { ExpandMore, ExpandLess, Code, FileDownloadOutlined } from '@mui/icons-material';
 import {
   BarChart,
   Bar,
@@ -91,6 +91,33 @@ const KpiCard: React.FC<{ data: FinleyKpiData }> = ({ data }) => (
 
 // --- Table -----------------------------------------------------------------
 
+/** RFC-4180 CSV cell escaping. Exports RAW values (unformatted) so the file is
+ * machine-usable in Excel/Sheets — no thousands separators, %, or em-dashes. */
+const csvCell = (v: unknown): string => {
+  if (v == null) return '';
+  const s = String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+const toCsv = (columns: string[], rows: Array<Record<string, unknown>>): string => {
+  const header = columns.map((c) => csvCell(prettyLabel(c))).join(',');
+  const body = rows.map((r) => columns.map((c) => csvCell(r[c])).join(',')).join('\r\n');
+  return `${header}\r\n${body}`;
+};
+
+const downloadCsv = (columns: string[], rows: Array<Record<string, unknown>>): void => {
+  // Leading BOM so Excel detects UTF-8.
+  const blob = new Blob([`﻿${toCsv(columns, rows)}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'finley-export.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 const DataTable: React.FC<{ data: FinleyTableData; enableSort: boolean }> = ({ data, enableSort }) => {
   const columns = data.columns ?? [];
   const rows = data.rows ?? [];
@@ -122,12 +149,24 @@ const DataTable: React.FC<{ data: FinleyTableData; enableSort: boolean }> = ({ d
   }, [rows, orderBy, order, enableSort]);
 
   return (
-    <TableContainer
-      component={Paper}
-      elevation={0}
-      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, maxHeight: 360 }}
-    >
-      <Table size="small" stickyHeader>
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0.5 }}>
+        <Button
+          size="small"
+          startIcon={<FileDownloadOutlined sx={{ fontSize: 16 }} />}
+          onClick={() => downloadCsv(columns, sortedRows)}
+          disabled={rows.length === 0}
+          sx={{ textTransform: 'none', color: 'text.secondary', fontSize: 12, minWidth: 0 }}
+        >
+          Download CSV
+        </Button>
+      </Box>
+      <TableContainer
+        component={Paper}
+        elevation={0}
+        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, maxHeight: 360 }}
+      >
+        <Table size="small" stickyHeader>
         <TableHead>
           <TableRow>
             {columns.map((col) => (
@@ -161,7 +200,8 @@ const DataTable: React.FC<{ data: FinleyTableData; enableSort: boolean }> = ({ d
           ))}
         </TableBody>
       </Table>
-    </TableContainer>
+      </TableContainer>
+    </Box>
   );
 };
 
