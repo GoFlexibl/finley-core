@@ -29,7 +29,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { asNumber, formatCompact, formatCell, formatKpiValue, prettyLabel } from '../format';
+import { asNumber, formatCompact, formatCell, formatKpiValue, isIdColumn, prettyLabel } from '../format';
 import type {
   FinleyResponseType,
   FinleyData,
@@ -92,16 +92,22 @@ const KpiCard: React.FC<{ data: FinleyKpiData }> = ({ data }) => (
 // --- Table -----------------------------------------------------------------
 
 /** RFC-4180 CSV cell escaping. Exports RAW values (unformatted) so the file is
- * machine-usable in Excel/Sheets — no thousands separators, %, or em-dashes. */
-const csvCell = (v: unknown): string => {
+ * machine-usable in Excel/Sheets — no thousands separators, %, or em-dashes.
+ * For identifier columns, long numeric IDs (12+ digits) are wrapped in the Excel
+ * text guard ="…" so a 16-digit MID does not open as 3.94891E+15 (or lose its
+ * last digits) — the exact scientific-notation problem IDs hit on export. */
+const csvCell = (v: unknown, column?: string): string => {
   if (v == null) return '';
   const s = String(v);
+  if (column && isIdColumn(column) && /^\d{12,}$/.test(s)) {
+    return `"=""${s}"""`;
+  }
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
 const toCsv = (columns: string[], rows: Array<Record<string, unknown>>): string => {
   const header = columns.map((c) => csvCell(prettyLabel(c))).join(',');
-  const body = rows.map((r) => columns.map((c) => csvCell(r[c])).join(',')).join('\r\n');
+  const body = rows.map((r) => columns.map((c) => csvCell(r[c], c)).join(',')).join('\r\n');
   return `${header}\r\n${body}`;
 };
 
@@ -117,6 +123,11 @@ const downloadCsv = (columns: string[], rows: Array<Record<string, unknown>>): v
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 };
+
+// A table is a PREVIEW, not the full extract: show at most this many rows on
+// screen (even when the whole portfolio was returned) and point to the CSV for
+// the rest. Keeps a "list everything" answer skimmable; Download CSV has it all.
+const PREVIEW_ROWS = 10;
 
 const DataTable: React.FC<{ data: FinleyTableData; enableSort: boolean }> = ({ data, enableSort }) => {
   const columns = data.columns ?? [];
@@ -191,16 +202,32 @@ const DataTable: React.FC<{ data: FinleyTableData; enableSort: boolean }> = ({ d
           </TableRow>
         </TableHead>
         <TableBody>
-          {sortedRows.map((row, i) => (
+          {sortedRows.slice(0, PREVIEW_ROWS).map((row, i) => (
             <TableRow key={i} hover>
               {columns.map((col) => (
                 <TableCell key={col}>{formatCell(row[col], col)}</TableCell>
               ))}
             </TableRow>
           ))}
+          {sortedRows.length > PREVIEW_ROWS && (
+            <TableRow>
+              <TableCell
+                colSpan={columns.length || 1}
+                align="center"
+                sx={{ color: 'text.disabled', letterSpacing: 4, py: 0.75, borderBottom: 'none' }}
+              >
+                …
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
       </TableContainer>
+      {sortedRows.length > PREVIEW_ROWS && (
+        <Box sx={{ mt: 0.75, fontSize: 12, color: 'text.secondary' }}>
+          Showing {PREVIEW_ROWS} of {sortedRows.length.toLocaleString()} rows. Download the CSV above for the full list.
+        </Box>
+      )}
     </Box>
   );
 };

@@ -34,6 +34,7 @@ export {
   formatCompact,
   isYearColumn,
   isPctColumn,
+  isIdColumn,
   asNumber,
   formatCell,
   formatKpiValue,
