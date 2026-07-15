@@ -228,7 +228,7 @@ const DataTable: React.FC<{ data: FinleyTableData; enableSort: boolean }> = ({ d
       </TableContainer>
       {sortedRows.length > PREVIEW_ROWS && (
         <Box sx={{ mt: 0.75, fontSize: 12, color: 'text.secondary' }}>
-          Showing {PREVIEW_ROWS} of {sortedRows.length.toLocaleString()} rows. Download the CSV above for the full list.
+          Previewing the first {PREVIEW_ROWS} of {sortedRows.length.toLocaleString()} rows — download the CSV above for all of them.
         </Box>
       )}
     </Box>
