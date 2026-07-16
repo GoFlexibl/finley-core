@@ -125,24 +125,105 @@ export interface FeedbackResponse {
   message: string;
 }
 
+// --- Teach Finley (VeriFley improve-mode: train -> draft -> save) ----------
+
 /**
- * A single, specific correction: "Finley said X, the truth is Y." This is the
- * highest-value learning signal — richer than a session rating. Sent to the
- * backend so it can become shared, retrievable memory (the learning loop).
+ * The agents an improvement can target. `finley` is the META layer
+ * (routing/wording). The rest are peers: specialist agents (each owns its
+ * own instruction store) plus `feed_use_case`, which isn't agent guidance at
+ * all — a recurring, SQL-backed insight drafted via the pipeline's use-case
+ * store. One classify call can target several of these at once from a
+ * single exchange.
  */
-export interface CorrectionRequest {
-  /** The exact statement Finley made that was wrong. */
-  claude_statement: string;
-  /** The user's correction / ground truth. */
-  user_correction: string;
-  /** What kind of error this was. */
-  category: string;
-  /** Optional subject the correction is about (fee, merchant, period, …). */
-  subject?: Record<string, unknown>;
-  /** Optional conversation linkage. */
+export type ImproveTarget = 'finley' | 'data' | 'reconciliation' | 'verifley' | 'interchange' | 'feed_use_case';
+
+/**
+ * One agent Finley decided the improvement teaches, with a plain-English
+ * summary. Carries enough (kind/answer/match/note) to be echoed back
+ * UNCHANGED on commit instead of the exchange being reclassified from
+ * scratch a second time — send the exact array a 'plan' call returned.
+ * `use_case_draft` is only present for a `feed_use_case` target: the actual
+ * drafted definition (SQL included) so the admin can review it before
+ * confirming, not just a one-line summary.
+ */
+export interface ImprovePlanItem {
+  agent: ImproveTarget;
+  label: string;
+  summary: string;
+  kind?: string;
+  answer?: string | null;
+  match?: string | null;
+  note?: string;
+  use_case_draft?: Record<string, unknown> | null;
+}
+
+/** A representative test Finley devised for a just-taught improvement
+ * (mode 'test'): which agent to run, the question to run, and what a
+ * correct result should show. */
+export interface ImproveTest {
+  agent: ImproveTarget;
+  label: string;
+  question: string;
+  expect: string;
+}
+
+/** Result of an improve() call. In 'propose'/'plan' mode `applied` is false
+ * and either `clarify`/`kind`/`reply` (a question or answer) or `targets`
+ * (the plan to confirm) is set; in 'commit' mode `applied` is true and
+ * `targets` are what was written. */
+export interface ImproveResult {
+  clarify: string | null;
+  applied: boolean;
+  targets: ImprovePlanItem[];
+  skipped?: ImprovePlanItem[];
+  /** This teach exchange's conversation id — send back on every follow-up
+   * call within the same exchange so Finley remembers earlier turns (its
+   * own clarifying question, what was already discussed) instead of
+   * classifying each message from a blank slate. Always present. */
+  conversation_id: string;
+  /** Present only in 'test' mode: the test Finley devised. */
+  test?: ImproveTest;
+  /** False when the feedback is a system-error/outage report, not a
+   * teachable change — the caller uses this to break a clarify loop. */
+  teachable?: boolean;
+  /** propose mode: what the admin is doing.
+   * 'answer' = they asked a question (reply has the answer);
+   * 'teach'  = teachable issue (targets = the plan to confirm);
+   * 'bug'    = a code bug, not teachable (reply explains);
+   * 'clarify'= one specific question (reply). */
+  kind?: 'answer' | 'teach' | 'bug' | 'clarify';
+  /** For answer/bug/clarify: the text Finley wants to show. */
+  reply?: string;
+}
+
+/** Request shape for `TeachClient.improve`. `agent`/`surface` are only
+ * page-context hints — Finley decides the real target(s) from `feedback`. */
+export interface ImproveContext {
+  question?: string;
+  answerType?: string;
+  period?: string;
+  surface?: 'fees' | 'data';
+  agent?: ImproveTarget | '';
+  mode?: 'propose' | 'plan' | 'commit' | 'test';
+  /** Optional admin capture (a data URL) Finley reads as extra context.
+   * Ephemeral: sent to the model with the call, never stored server-side. */
+  image?: string;
+  /** Admin corrections to Finley's classified routing (mode 'commit' only),
+   * keyed by the classified agent -> the specialist to record to instead. */
+  agent_overrides?: Record<string, string>;
+  /** Context about the answer under discussion, so the router can ground
+   * its reply (e.g. read a LIMIT off the SQL to explain a capped count). */
+  sql?: string;
+  answerMessage?: string;
+  responseType?: string;
+  /** This teach exchange's conversation id (from a prior call's result).
+   * Omit on the first call of a new exchange. */
   conversation_id?: string;
-  /** Where Finley was when corrected (filled in automatically). */
-  page_context?: FinleyPageContextPayload;
+  /** mode 'commit' only: the exact target list a prior 'plan' call
+   * returned (optionally with agent_overrides already applied client-side
+   * to each target's `agent`) — written as-is, no reclassify. Omit to fall
+   * back to reclassifying from `feedback` server-side. */
+  targets?: ImprovePlanItem[];
 }
 
 // --- HTTP client (injected by each app) ------------------------------------

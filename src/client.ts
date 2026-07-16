@@ -9,12 +9,13 @@
  */
 import { getFinleyPageContext } from './context';
 import type {
-  CorrectionRequest,
   DataCatalog,
   FeedbackRequest,
   FeedbackResponse,
   FinleyHttpClient,
   FinleyPageContextPayload,
+  ImproveContext,
+  ImproveResult,
   TalkToDataQueryResponse,
 } from './types';
 
@@ -79,8 +80,6 @@ export interface TalkToDataClient {
   ) => Promise<TalkToDataQueryResponse>;
   /** Submit end-of-session feedback. Only `conversation_id` is required. */
   submitFeedback: (feedback: FeedbackRequest) => Promise<FeedbackResponse>;
-  /** Send a specific correction as a learning signal. Best-effort; never throws. */
-  submitCorrection: (correction: CorrectionRequest) => Promise<boolean>;
 }
 
 /**
@@ -155,21 +154,65 @@ export const createTalkToDataClient = (
     }
   };
 
-  const submitCorrection = async (correction: CorrectionRequest): Promise<boolean> => {
-    // Skip entirely until the prod backend exposes /correction (gated with page_context).
-    if (!supportsContext) return false;
-    try {
-      const pageContext = correction.page_context ?? buildPageContextPayload();
-      await http.post(`${BASE}/correction`, {
-        ...correction,
-        ...(pageContext ? { page_context: pageContext } : {}),
-      });
-      return true;
-    } catch {
-      // Learning signal is best-effort; never surface to the user.
-      return false;
-    }
+  return { getCatalog, queryTalkToData, submitFeedback };
+};
+
+// --- Teach Finley (VeriFley improve-mode: train -> draft -> save) ----------
+
+export interface CreateTeachClientOptions {
+  /** Backend path prefix. Defaults to `/verifley`. */
+  base?: string;
+}
+
+export interface TeachClient {
+  /**
+   * Improvement mode. Finley (the meta agent) reads `feedback` and decides
+   * which agent(s) — or a feed use case — it teaches, possibly several at
+   * once. `mode: 'propose'` converses without writing; `mode: 'plan'`
+   * classifies and returns a preview without writing; `mode: 'commit'`
+   * writes (reusing `ctx.targets` from a prior 'plan' call when given, so
+   * nothing is reclassified a second time); `mode: 'test'` devises a check
+   * for the last taught improvement. Thread `ctx.conversation_id` from the
+   * previous call's result on every follow-up so Finley remembers the
+   * exchange instead of classifying each message from a blank slate.
+   */
+  improve: (feedback: string, ctx?: ImproveContext) => Promise<ImproveResult>;
+}
+
+/**
+ * Build a Teach Finley client bound to a given HTTP client. Mirrors
+ * `createTalkToDataClient`'s pattern: each app injects its own `httpClient`
+ * (already carrying whatever auth/tenant/partner params that app's calls
+ * need) and exports the returned functions.
+ */
+export const createTeachClient = (
+  http: FinleyHttpClient,
+  options: CreateTeachClientOptions = {},
+): TeachClient => {
+  const BASE = options.base ?? '/verifley';
+
+  const improve = async (feedback: string, ctx: ImproveContext = {}): Promise<ImproveResult> => {
+    const res = await http.post<{ success: boolean; data: ImproveResult }>(`${BASE}/improve`, {
+      feedback,
+      question: ctx.question ?? '',
+      answerType: ctx.answerType ?? '',
+      period: ctx.period ?? '',
+      surface: ctx.surface ?? 'fees',
+      agent: ctx.agent ?? '',
+      channel: 'draft',
+      mode: ctx.mode ?? 'commit',
+      image: ctx.image ?? '',
+      sql: ctx.sql ?? '',
+      answerMessage: ctx.answerMessage ?? '',
+      responseType: ctx.responseType ?? '',
+      ...(ctx.conversation_id ? { conversation_id: ctx.conversation_id } : {}),
+      ...(ctx.targets ? { targets: ctx.targets } : {}),
+      ...(ctx.agent_overrides && Object.keys(ctx.agent_overrides).length
+        ? { agent_overrides: ctx.agent_overrides }
+        : {}),
+    });
+    return res.data.data;
   };
 
-  return { getCatalog, queryTalkToData, submitFeedback, submitCorrection };
+  return { improve };
 };

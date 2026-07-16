@@ -23,7 +23,11 @@ export type {
   FeedbackTopicCategory,
   FeedbackRequest,
   FeedbackResponse,
-  CorrectionRequest,
+  ImproveTarget,
+  ImprovePlanItem,
+  ImproveTest,
+  ImproveResult,
+  ImproveContext,
   FinleyHttpResponse,
   FinleyHttpClient,
 } from './types';
@@ -54,6 +58,10 @@ export type { FinleyTool, FinleyPageContext } from './context';
 // Talk-to-Your-Data client factory
 export { createTalkToDataClient } from './client';
 export type { CreateTalkToDataClientOptions, TalkToDataClient } from './client';
+
+// Teach Finley client factory (VeriFley improve-mode: train -> draft -> save)
+export { createTeachClient } from './client';
+export type { CreateTeachClientOptions, TeachClient } from './client';
 
 // Utilities
 export { buildFollowUps } from './utils/followUps';
