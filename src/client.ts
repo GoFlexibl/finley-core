@@ -207,6 +207,7 @@ export const createTeachClient = (
       responseType: ctx.responseType ?? '',
       ...(ctx.conversation_id ? { conversation_id: ctx.conversation_id } : {}),
       ...(ctx.targets ? { targets: ctx.targets } : {}),
+      ...(ctx.sourceConversationId ? { source_conversation_id: ctx.sourceConversationId } : {}),
       ...(ctx.agent_overrides && Object.keys(ctx.agent_overrides).length
         ? { agent_overrides: ctx.agent_overrides }
         : {}),

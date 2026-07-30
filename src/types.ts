@@ -217,13 +217,24 @@ export interface ImproveContext {
   answerMessage?: string;
   responseType?: string;
   /** This teach exchange's conversation id (from a prior call's result).
-   * Omit on the first call of a new exchange. */
+   * Omit on the first call of a new exchange. This is NOT the conversation
+   * being taught about — it's Finley's own memory of this teach dialogue
+   * (its clarifying questions, etc). Use `sourceConversationId` below to
+   * link a taught item back to the actual chat conversation it came from. */
   conversation_id?: string;
   /** mode 'commit' only: the exact target list a prior 'plan' call
    * returned (optionally with agent_overrides already applied client-side
    * to each target's `agent`) — written as-is, no reclassify. Omit to fall
    * back to reclassifying from `feedback` server-side. */
   targets?: ImprovePlanItem[];
+  /** The conversation_id of the actual chat conversation the admin was
+   * looking at when they taught this (e.g. a talk-to-data conversation_id) —
+   * distinct from `conversation_id` above, which is only this teach
+   * exchange's own back-and-forth. Recorded on each written guidance/flag
+   * item so a superadmin browsing that conversation later can see what was
+   * taught from it. Omit if there's no underlying conversation (e.g.
+   * teaching from a non-chat surface). */
+  sourceConversationId?: string;
 }
 
 // --- HTTP client (injected by each app) ------------------------------------
