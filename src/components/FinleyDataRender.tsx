@@ -36,6 +36,7 @@ import type {
   FinleyKpiData,
   FinleyTableData,
   FinleyCartesianChartData,
+  FinleyChartSeries,
   FinleyPieChartData,
 } from '../types';
 import { resolveChartTheme, type FinleyChartTheme } from './chartTheme';
@@ -62,13 +63,27 @@ export interface FinleyDataRenderProps {
   showQuery?: boolean;
 }
 
-/** A recharts `<Tooltip>` honoring the theme's custom content when provided. */
-const ThemedTooltip: React.FC<{ theme: FinleyChartTheme }> = ({ theme }) =>
-  theme.renderTooltip ? (
-    <Tooltip cursor={theme.cursor as object | undefined} content={theme.renderTooltip((v) => formatCell(v))} />
+/**
+ * A recharts `<Tooltip>` honoring the theme's custom content when provided.
+ *
+ * Cartesian charts key their x axis on the row index rather than on the label
+ * (see `toCartesianRows`), so the tooltip's `label` arrives as that index and
+ * has to be mapped back to the category text — via `labelFormatter`, which
+ * recharts passes on to custom content too. Pie charts pass no labels and keep
+ * recharts' own label.
+ */
+const ThemedTooltip: React.FC<{ theme: FinleyChartTheme; labels?: string[] }> = ({ theme, labels }) => {
+  const labelFormatter = labels ? (value: unknown) => labels[Number(value)] ?? '' : undefined;
+  return theme.renderTooltip ? (
+    <Tooltip
+      cursor={theme.cursor as object | undefined}
+      labelFormatter={labelFormatter}
+      content={theme.renderTooltip((v) => formatCell(v))}
+    />
   ) : (
-    <Tooltip formatter={(v) => formatCell(v)} />
+    <Tooltip formatter={(v) => formatCell(v)} labelFormatter={labelFormatter} />
   );
+};
 
 // --- KPI -------------------------------------------------------------------
 
@@ -238,39 +253,62 @@ const DataTable: React.FC<{ data: FinleyTableData; enableSort: boolean }> = ({ d
 // --- Bar / Line ------------------------------------------------------------
 
 /**
- * Reshape { x_labels, series } into recharts row records. The Redshift Data API
- * returns numeric columns as strings; recharts needs real numbers on the dataKey
- * or it renders a blank chart, so coerce via asNumber (non-numeric → 0).
+ * Reshape { x_labels, series } into recharts row records.
+ *
+ * The x axis is keyed on `__i`, the row index, NOT on the label: recharts 3
+ * resolves an axis tooltip by looking the hovered label up in the data
+ * (findEntryInArray), so any two points sharing a label both resolve to the
+ * first of them — a chart whose x labels repeat (every month of one year
+ * labelled "2026", the same merchant name twice) then shows that first row's
+ * numbers on every point. Indices are unique by construction; `__x` is kept on
+ * the row so custom tooltips can still read the label off the payload.
+ *
+ * The Redshift Data API returns numeric columns as strings, so values are
+ * coerced via asNumber. Anything non-numeric becomes null — a gap — rather
+ * than 0, which would draw a data point that was never in the result.
  */
-const toCartesianRows = (data: FinleyCartesianChartData) => {
-  const labels = data.x_labels ?? [];
-  const series = data.series ?? [];
-  return labels.map((label, i) => {
-    const row: Record<string, number | string> = { __x: label };
+const toCartesianRows = (labels: string[], series: FinleyChartSeries[]) =>
+  labels.map((label, i) => {
+    const row: Record<string, number | string | null> = { __i: i, __x: label };
     series.forEach((s) => {
-      row[s.name] = asNumber(s.data?.[i]) ?? 0;
+      row[s.name] = asNumber(s.data?.[i]) ?? null;
     });
     return row;
   });
+
+/**
+ * The series that actually measure something. A column of labels sent as a
+ * series (a `month_label` next to the metric it labels) has nothing numeric in
+ * it and would draw a flat line at zero plus a junk legend entry. If that would
+ * leave nothing to draw, keep the original series rather than a blank chart.
+ */
+const plottableSeries = (data: FinleyCartesianChartData): FinleyChartSeries[] => {
+  const series = data.series ?? [];
+  const measured = series.filter((s) => (s.data ?? []).some((v) => asNumber(v) !== null));
+  return measured.length ? measured : series;
 };
 
 const BarChartView: React.FC<{ data: FinleyCartesianChartData; theme: FinleyChartTheme }> = ({ data, theme }) => {
-  const rows = toCartesianRows(data);
-  const series = data.series ?? [];
+  const labels = data.x_labels ?? [];
+  const series = plottableSeries(data);
+  const rows = toCartesianRows(labels, series);
   return (
     <ResponsiveContainer width="100%" height={260}>
       <BarChart data={rows} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
         <CartesianGrid {...theme.grid} />
+        {/* A theme only carries styling, so the axis keeps its own dataKey and
+            tick text (the ticks are row indices — see toCartesianRows). */}
         <XAxis
-          dataKey="__x"
           {...theme.xAxis}
+          dataKey="__i"
+          tickFormatter={(i: number) => labels[i] ?? ''}
           interval={0}
           angle={rows.length > 6 ? -25 : 0}
           textAnchor={rows.length > 6 ? 'end' : 'middle'}
           height={rows.length > 6 ? 56 : 30}
         />
         <YAxis {...theme.yAxis} tickFormatter={formatCompact} />
-        <ThemedTooltip theme={theme} />
+        <ThemedTooltip theme={theme} labels={labels} />
         {series.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
         {series.map((s, i) => (
           <Bar key={s.name} dataKey={s.name} fill={theme.palette[i % theme.palette.length]} radius={theme.barRadius} />
@@ -281,15 +319,16 @@ const BarChartView: React.FC<{ data: FinleyCartesianChartData; theme: FinleyChar
 };
 
 const LineChartView: React.FC<{ data: FinleyCartesianChartData; theme: FinleyChartTheme }> = ({ data, theme }) => {
-  const rows = toCartesianRows(data);
-  const series = data.series ?? [];
+  const labels = data.x_labels ?? [];
+  const series = plottableSeries(data);
+  const rows = toCartesianRows(labels, series);
   return (
     <ResponsiveContainer width="100%" height={260}>
       <LineChart data={rows} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
         <CartesianGrid {...theme.grid} />
-        <XAxis dataKey="__x" {...theme.xAxis} />
+        <XAxis {...theme.xAxis} dataKey="__i" tickFormatter={(i: number) => labels[i] ?? ''} />
         <YAxis {...theme.yAxis} tickFormatter={formatCompact} />
-        <ThemedTooltip theme={theme} />
+        <ThemedTooltip theme={theme} labels={labels} />
         {series.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
         {series.map((s, i) => {
           const color = theme.palette[i % theme.palette.length];
