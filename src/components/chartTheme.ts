@@ -27,6 +27,10 @@ export interface FinleyChartTheme {
    * Optional custom tooltip content. Receives the value formatter and returns a
    * recharts tooltip `content` element. When unset, a plain `<Tooltip formatter>`
    * is used (the admin look).
+   *
+   * recharts clones the element with its own tooltip props, so the content MUST
+   * render its title through the `labelFormatter` prop it is handed: on a
+   * bar/line chart the raw `label` is the row index, not the category text.
    */
   renderTooltip?: (valueFormatter: (v: number) => string) => ReactElement;
 }
