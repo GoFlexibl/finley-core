@@ -78,7 +78,7 @@ you tag it.
 
 | Repo | What it is | Default branch | Push deploys to |
 |---|---|---|---|
-| `flexibl-payments-pipeline` | Python/FastAPI: ingestion, Redshift, KPIs, Finley backend, feed | `main` | ECS **prod** (`dev` branch -> ECS dev) |
+| `flexibl-payments-pipeline` | Python/FastAPI: ingestion, Redshift, KPIs, Finley backend, feed | `main` | ECS **prod** (no dev environment) |
 | `admin-portal-api` | Python/FastAPI on Lambda: admin portal backend, proxies to the pipeline | `main` | Lambda `admin-portal-api` (prod) |
 | `ui-admin-portal` | React/Vite: internal admin portal (admin.goflexibl.com) | `master` | S3 + CloudFront (prod) |
 | `ui-app-new` | React/Vite: partner-facing dashboard (app.goflexibl.com) | `master` | S3 + CloudFront (prod) |
