@@ -4,6 +4,19 @@
 // Version (shown in each app's Finley header so you can see which build is live)
 export { FINLEY_CORE_VERSION } from './version';
 
+// Metric vocabulary - generated from the pipeline's src/shared/metrics/registry.py.
+// Both UIs hardcode user-visible strings inline, which is how one number ended up
+// labelled "Effective Rate", "Eff. rate" and "ER" on three different screens.
+// Render METRIC_LABEL[id] instead of writing the string again.
+export type { MetricDefinition, MetricQuantity, MetricVisibility } from './metrics';
+export {
+  METRICS,
+  METRIC_LABEL,
+  AMBIGUOUS_METRIC_NAMES,
+  resolveMetric,
+  metricAmbiguity,
+} from './metrics';
+
 // Types
 export type {
   FinleyResponseType,
