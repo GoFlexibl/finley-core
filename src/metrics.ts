@@ -5,7 +5,7 @@
 // regenerate; an edit here is overwritten and disagrees with what the API
 // actually returns.
 //
-// 40 metrics (39 canonical), 55 alternative names.
+// 46 metrics (45 canonical), 70 alternative names.
 //
 // Why this exists: both UIs hardcode user-visible strings inline, so the same
 // number was labelled "Effective Rate" on one screen, "Eff. rate" on another and
@@ -247,56 +247,70 @@ export const METRICS: readonly MetricDefinition[] = [
   {
     "id": "volume_fee",
     "name": "volume_fee",
-    "uiLabel": "volume_fee",
-    "aliases": [],
+    "uiLabel": "Volume fees",
+    "aliases": [
+      "fee:volume_fee"
+    ],
     "quantity": null,
     "apiField": null,
-    "visibility": "internal"
+    "visibility": "partner"
   },
   {
     "id": "per_auth_fee",
     "name": "per_auth_fee",
-    "uiLabel": "per_auth_fee",
-    "aliases": [],
+    "uiLabel": "Per-authorization fees",
+    "aliases": [
+      "fee:per_auth_fee"
+    ],
     "quantity": null,
     "apiField": null,
-    "visibility": "internal"
+    "visibility": "partner"
   },
   {
     "id": "payments_fee",
     "name": "payments_fee",
-    "uiLabel": "payments_fee",
-    "aliases": [],
+    "uiLabel": "Payment processing fees",
+    "aliases": [
+      "fee:payments_fee",
+      "charge:payments_fee",
+      "dispute:payments_fee"
+    ],
     "quantity": null,
     "apiField": null,
-    "visibility": "internal"
+    "visibility": "partner"
   },
   {
     "id": "interchange",
     "name": "interchange",
-    "uiLabel": "interchange",
-    "aliases": [],
+    "uiLabel": "Interchange",
+    "aliases": [
+      "network_cost:interchange"
+    ],
     "quantity": null,
     "apiField": null,
-    "visibility": "internal"
+    "visibility": "partner"
   },
   {
     "id": "card_scheme",
     "name": "card_scheme",
-    "uiLabel": "card_scheme",
-    "aliases": [],
+    "uiLabel": "Scheme fees",
+    "aliases": [
+      "network_cost:card_scheme"
+    ],
     "quantity": null,
     "apiField": null,
-    "visibility": "internal"
+    "visibility": "partner"
   },
   {
     "id": "discount",
     "name": "discount",
-    "uiLabel": "discount",
-    "aliases": [],
+    "uiLabel": "Discount rate fees",
+    "aliases": [
+      "network_cost:discount"
+    ],
     "quantity": null,
     "apiField": null,
-    "visibility": "internal"
+    "visibility": "partner"
   },
   {
     "id": "other_fee",
@@ -310,11 +324,79 @@ export const METRICS: readonly MetricDefinition[] = [
   {
     "id": "non_transactional_card_scheme",
     "name": "non_transactional_card_scheme",
-    "uiLabel": "non_transactional_card_scheme",
-    "aliases": [],
+    "uiLabel": "Non-transactional scheme fees",
+    "aliases": [
+      "network_cost:non_transactional_card_scheme"
+    ],
     "quantity": null,
     "apiField": null,
-    "visibility": "internal"
+    "visibility": "partner"
+  },
+  {
+    "id": "other_network_costs",
+    "name": "Other Network Costs",
+    "uiLabel": "Other network costs",
+    "aliases": [
+      "network_cost:other_fee"
+    ],
+    "quantity": null,
+    "apiField": null,
+    "visibility": "partner"
+  },
+  {
+    "id": "network_tax",
+    "name": "Network Tax",
+    "uiLabel": "Network tax",
+    "aliases": [
+      "network_cost:tax"
+    ],
+    "quantity": null,
+    "apiField": null,
+    "visibility": "partner"
+  },
+  {
+    "id": "fee_tax",
+    "name": "Tax on Fees",
+    "uiLabel": "Tax on fees",
+    "aliases": [
+      "fee:tax"
+    ],
+    "quantity": null,
+    "apiField": null,
+    "visibility": "partner"
+  },
+  {
+    "id": "blended_fee",
+    "name": "Blended Fees",
+    "uiLabel": "Blended fees",
+    "aliases": [
+      "fee:blended_fee"
+    ],
+    "quantity": null,
+    "apiField": null,
+    "visibility": "partner"
+  },
+  {
+    "id": "processing_fee",
+    "name": "Processing Fee",
+    "uiLabel": "Processing fees",
+    "aliases": [
+      "fee:processing_fee"
+    ],
+    "quantity": null,
+    "apiField": null,
+    "visibility": "partner"
+  },
+  {
+    "id": "negative_balance_collections",
+    "name": "Negative Balance Collections",
+    "uiLabel": "Negative balance collections",
+    "aliases": [
+      "fee:gross"
+    ],
+    "quantity": null,
+    "apiField": null,
+    "visibility": "partner"
   },
   {
     "id": "monthly_card_funding_margin",
