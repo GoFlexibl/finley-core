@@ -114,19 +114,23 @@ It applies even when the fix looks small or obvious. A single "proceed? y/n" is 
 5. **Build, fail-first**: write the failing test, confirm it fails for the right
    reason, then implement.
 6. **Cross-check**: an agent other than the builder reviews each step against the
-   acceptance criteria.
+   acceptance criteria and the code checks in sections 2, 4 and 5.
 7. **Consensus**: the agents agree, or the disagreement goes to the user. Go back to
    step 5 if needed.
 8. **Gap check**: compare the finished work with the original understanding. What is
    untested or missing? Include real before/after numbers where relevant.
 9. **User Gate 2**: explicit sign-off before any commit, push, deploy or prod write.
 
-### 2. Accuracy
+### 2. Accuracy: never invent
 
+- **Never invent information.** No made-up numbers, IDs, names, paths, table, column or
+  field names, API behaviour, requirements, dates or business rules. Never fill a gap with
+  a plausible guess, a placeholder or an example value presented as real. If it is not in
+  a source you read or queried, ask for it.
 - Every number and factual claim comes from a source you actually queried or read, and
   you say which source.
-- An assumed or inferred value is labelled as such, and never becomes the backbone of
-  an analysis or a KPI.
+- An inferred value is allowed only when labelled as inferred, and never becomes the
+  backbone of an analysis, a KPI or a code path. If the answer depends on it, ask.
 - Re-check claims against the source before anything goes to an external team.
 - If an unexpected value appears (an unknown ID, region or partner), trace where it
   came from before using it.
@@ -147,14 +151,32 @@ It applies even when the fix looks small or obvious. A single "proceed? y/n" is 
   `UPDATE ... FROM` or `INSERT ... WHERE NOT EXISTS` per chunk. Each Redshift Data API
   round trip costs about 1-2s.
 - Prefer filtered, limited queries to full scans.
+- Every code change is checked for performance and cost before it is called done: round
+  trips, scan and payload size, retries, timeouts, and any AWS resource it creates or
+  keeps running.
+- **No leakage**:
+  - money: no idle or orphaned AWS resources, no unbounded loops, retries, polling or
+    log volume, no always-on work that a schedule or event could do;
+  - resources: connections, threads, background tasks, temp files and temp S3 objects
+    are closed or cleaned up;
+  - data: secrets and partner data never reach logs, error messages, responses or LLM
+    prompts they do not belong in, and never another partner. Partner-scoped queries
+    always filter by partner.
 
 ### 5. Clean, scalable design
 
+These apply to every code change, gated or not. The step 6 reviewer (or the Tier A
+second agent) checks them, and the hand-off states the result of each check.
+
+- **DRY**: before writing code, search for an existing helper, formula, query, constant,
+  type or component and reuse it. Each rule, formula or piece of knowledge lives in one
+  place. Never copy it into a second file, repo or hardcoded list.
 - One robust component beats several scattered, overlapping ones. Consolidate instead
   of adding a parallel store, page or path.
-- Remove dead code, **but** treat a zero-caller function as a pinned spec, and leave
-  it, if it has its own regression test, a docstring pointing at it, or a twin in
-  another language or repo.
+- **Dead code is removed in the same change**: unused functions, imports, routes, flags,
+  config, scripts, types, UI components, and the docs that describe them. **But** treat
+  a zero-caller function as a pinned spec, and leave it, if it has its own regression
+  test, a docstring pointing at it, or a twin in another language or repo.
 
 ### 6. Text people read
 
