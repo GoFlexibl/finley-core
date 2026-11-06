@@ -14,11 +14,13 @@ apps through a version bump, so the two can never drift.
 npm install
 npm run build        # tsup -> dist/ (ESM only, d.ts, sourcemaps, es2020)
 npm run typecheck    # tsc --noEmit
+npm test             # vitest run (src/**/*.test.ts)
 ```
 
-There are no tests and no lint script. `npm run typecheck` and `npm run build` must
-both pass, and a change should also be typechecked inside both consuming apps before
-you tag it.
+Tests are vitest files next to the code (`src/**/*.test.ts`, e.g. `src/context.pin.test.ts`).
+`package.json` `files` excludes them from the package. There is no lint script and no CI
+step: run `npm test`, `npm run typecheck` and `npm run build` yourself, and all three
+must pass. A change should also be typechecked inside both consuming apps before you tag it.
 
 ## Releasing (read before bumping)
 
