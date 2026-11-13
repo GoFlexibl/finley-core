@@ -69,4 +69,9 @@ describe('cleanMarkdown', () => {
   it('turns bullets into ASCII hyphens', () => {
     expect(cleanMarkdown('**Fees**\n* one\n- two')).toBe('Fees\n- one\n- two');
   });
+
+  it('turns only line-start asterisks into bullets, never an inline multiplication', () => {
+    expect(cleanMarkdown('Fee: 1,234 * $0.10 = $123.40')).toBe('Fee: 1,234 * $0.10 = $123.40');
+    expect(cleanMarkdown('* one\n  * nested')).toBe('- one\n  - nested');
+  });
 });

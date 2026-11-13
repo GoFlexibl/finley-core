@@ -33,7 +33,7 @@ export const cleanMarkdown = (text: string): string => {
     .replace(/### /g, '')                     // Remove h3 markers
     .replace(/^# /gm, '')                     // Remove h1 markers at line start
     .replace(/\*\*/g, '')                     // Remove bold markers
-    .replace(/\* /g, '- ')                    // Bullet markers become plain ASCII hyphens
+    .replace(/^(\s*)\* /gm, '$1- ')          // Line-start bullet markers become ASCII hyphens
     .replace(/`/g, '')                        // Remove code markers
     .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Remove markdown links but keep text
     .replace(/_/g, '');                       // Remove italic markers
