@@ -4,7 +4,7 @@ Single source of truth for **Finley** (the talk-to-your-data assistant), consume
 by both Flexibl frontends:
 
 - **Admin portal** - `GoFlexibl/ui-admin-portal` (internal training ground)
-- **Customer app** - `GoFlexibl/ui-app-new`
+- **Partner app** - `GoFlexibl/ui-app-new`
 
 Any Finley improvement to shared logic or rendering is made **here once** and
 propagates to both apps via a version bump, so the two surfaces can't silently
@@ -30,7 +30,7 @@ diverge.
 The package is framework-aware but **app-agnostic**. Each app injects:
 
 - its **`httpClient`** -> `createTalkToDataClient(httpClient, { supportsContext })`
-- its **chart theme** -> `<FinleyDataRender chartTheme={...} />` (customer's design
+- its **chart theme** -> `<FinleyDataRender chartTheme={...} />` (the partner app's design
   system; admin uses the default)
 - **table sorting** -> `<FinleyDataRender enableSort />` (admin)
 - **app actions** (e.g. admin's Pin to Home) -> `<FinleyDataRender renderActions={...} />`

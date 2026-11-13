@@ -59,7 +59,7 @@ export interface FinleyDataRenderProps {
   /** Render app-specific actions under the card (e.g. admin's Pin to Home). */
   renderActions?: (card: FinleyCard) => React.ReactNode;
   /** Show the "View query" (raw SQL) disclosure. Default on for the admin portal;
-   * the customer app passes false so end users never see the generated SQL. */
+   * the partner app passes false so end users never see the generated SQL. */
   showQuery?: boolean;
 }
 
@@ -131,7 +131,7 @@ const toCsv = (columns: string[], rows: Array<Record<string, unknown>>): string 
 
 const downloadCsv = (columns: string[], rows: Array<Record<string, unknown>>): void => {
   // Leading BOM so Excel detects UTF-8.
-  const blob = new Blob([`﻿${toCsv(columns, rows)}`], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob([`\uFEFF${toCsv(columns, rows)}`], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -234,7 +234,7 @@ const DataTable: React.FC<{ data: FinleyTableData; enableSort: boolean }> = ({ d
                 align="center"
                 sx={{ color: 'text.disabled', letterSpacing: 4, py: 0.75, borderBottom: 'none' }}
               >
-                …
+                ...
               </TableCell>
             </TableRow>
           )}
@@ -243,7 +243,7 @@ const DataTable: React.FC<{ data: FinleyTableData; enableSort: boolean }> = ({ d
       </TableContainer>
       {sortedRows.length > PREVIEW_ROWS && (
         <Box sx={{ mt: 0.75, fontSize: 12, color: 'text.secondary' }}>
-          Previewing the first {PREVIEW_ROWS} of {sortedRows.length.toLocaleString()} rows — download the CSV above for all of them.
+          Previewing the first {PREVIEW_ROWS} of {sortedRows.length.toLocaleString()} rows. Download the CSV above for all of them.
         </Box>
       )}
     </Box>
@@ -423,7 +423,7 @@ export const FinleyDataRender: React.FC<FinleyDataRenderProps> = ({
   showQuery = true,
 }) => {
   const theme = resolveChartTheme(chartTheme);
-  // Gate the raw-SQL disclosure: hidden entirely in the customer app.
+  // Gate the raw-SQL disclosure: hidden entirely in the partner app.
   const sqlNode = showQuery && sql ? <ViewSql sql={sql} /> : null;
 
   // `text` responses (and anything with no payload) render nothing here.

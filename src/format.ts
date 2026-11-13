@@ -1,7 +1,7 @@
 // Shared Finley value formatters — number / percent / year aware.
 //
 // Canonical home: the @goflexibl/finley-core package, consumed by both the admin
-// portal and the customer app so Finley's formatting stays identical everywhere.
+// portal and the partner app so Finley's formatting stays identical everywhere.
 // Keep this file free of framework imports — pure value-in / string-out.
 
 export const isFiniteNumber = (v: unknown): v is number =>
@@ -48,7 +48,7 @@ export const asNumber = (v: unknown): number | null => {
 
 /** Format a single value for display, optionally aware of its column name. */
 export const formatCell = (value: unknown, column?: string): string => {
-  if (value == null) return '—';
+  if (value == null) return '-';
   // Identifiers render exactly as they arrive — no grouping, no sci-notation.
   if (isIdColumn(column)) return String(value);
   const n = asNumber(value);

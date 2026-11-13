@@ -3,7 +3,7 @@
 // indigo accent, spark-glyph header, finding-style bubbles, rounded composer.
 //
 // Single source of truth: both the admin portal (ui-admin-portal) and the
-// customer app (ui-app-new) inject this string via a <style> tag in their chat
+// partner app (ui-app-new) inject this string via a <style> tag in their chat
 // panel root. Do not fork per-app — extend here.
 export const FINLEY_SKIN = `
 @import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
@@ -53,7 +53,7 @@ export const FINLEY_SKIN = `
 .fly-skin .fly-text{ font-size:14px; line-height:1.58; color:var(--ink-2); margin:0; white-space:pre-wrap; word-wrap:break-word; }
 .fly-skin .fly-text strong{ color:var(--ink); font-weight:700; }
 
-/* designed cards — shared block renderer (fee summary, breakdown, reconciliation, remediation) */
+/* designed cards - shared block renderer (fee summary, breakdown, reconciliation, remediation) */
 .fly-skin .fly-row{ display:flex; align-items:baseline; gap:12px; padding:8px 0; border-top:1px solid var(--line-2); }
 .fly-skin .fly-amt{ font-family:var(--mono); font-size:13.5px; font-weight:600; white-space:nowrap; }
 .fly-skin .fly-grp{ font-size:11px; font-weight:700; letter-spacing:.02em; color:var(--ink-2); margin:15px 0 1px; display:flex; align-items:center; gap:7px; }

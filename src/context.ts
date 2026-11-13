@@ -23,7 +23,7 @@ export interface FinleyTool {
 
 /** What a page tells Finley about itself. */
 export interface FinleyPageContext {
-  /** Module key, e.g. 'feed' | 'dashboard'. Replaces the hardcoded switch. */
+  /** Module key, e.g. 'feed' | 'dashboard' (the Overview page) | 'account-performance'. Replaces the hardcoded switch. */
   module: string;
   /** Pathname captured at registration time. */
   route: string;
@@ -83,9 +83,13 @@ export const clearFinleyPageContext = (): void => {
  */
 export const resolveModuleFromPath = (pathname: string): string => {
   if (pathname.includes('/feed')) return 'feed';
-  if (pathname.includes('/dashboard')) return 'dashboard';
+  // The Overview page keeps the internal module key 'dashboard'. /dashboard and
+  // /customer-performance are the old paths; the apps redirect them to the new ones.
+  if (pathname.includes('/overview') || pathname.includes('/dashboard')) return 'dashboard';
   if (pathname.includes('/cohort-analysis')) return 'cohort-analysis';
-  if (pathname.includes('/customer-performance')) return 'customer-performance';
+  if (pathname.includes('/account-performance') || pathname.includes('/customer-performance')) {
+    return 'account-performance';
+  }
   if (pathname.includes('/margin-analysis')) return 'margin-analysis';
   if (pathname.includes('/reconciliation')) return 'reconciliation';
   if (pathname.includes('/reporting')) return 'reporting';

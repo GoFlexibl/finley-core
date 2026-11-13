@@ -4,7 +4,7 @@
  * Server-side text-to-SQL agent (Claude-backed) exposed by the Flexibl backend
  * under `/talk-to-data`. Each app injects its own `httpClient` (which already
  * adds the JWT bearer token / X-Email and handles refresh); the backend reads
- * `partner_id` from the token — we never send it. Admin and customer share this
+ * `partner_id` from the token — we never send it. Admin and the partner app share this
  * exact request logic; only the injected client and `supportsContext` differ.
  */
 import { getFinleyPageContext } from './context';
@@ -51,7 +51,7 @@ const toUserError = (error: unknown): Error => {
     case 401:
       return new Error('Your session has expired. Please sign in again.');
     case 403:
-      return new Error('Access denied for this account.');
+      return new Error('You do not have access to this.');
     case 502:
       return new Error('Something went wrong. Try rephrasing your question.');
     case 503:

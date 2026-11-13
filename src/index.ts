@@ -1,5 +1,5 @@
 // @goflexibl/finley-core — single source of truth for Finley, consumed by both
-// the admin portal (ui-admin-portal) and the customer app (ui-app-new).
+// the admin portal (ui-admin-portal) and the partner app (ui-app-new).
 
 // Version (shown in each app's Finley header so you can see which build is live)
 export { FINLEY_CORE_VERSION } from './version';
@@ -99,7 +99,7 @@ export { DEFAULT_CHART_THEME, resolveChartTheme } from './components/chartTheme'
 export type { FinleyChartTheme } from './components/chartTheme';
 
 // Designed-card framework — one block renderer + domain builders, shared by
-// the admin portal and the customer app. See finleySkin for the scoped CSS.
+// the admin portal and the partner app. See finleySkin for the scoped CSS.
 export { FinleyBlocks, planBlocks, summaryBlocks, breakdownBlocks, reconBlocks } from './components/finleyBlocks';
 export type { Block } from './components/finleyBlocks';
 

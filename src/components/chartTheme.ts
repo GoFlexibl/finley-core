@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 /**
  * Visual theming for Finley charts, injected per app so each surface matches its
  * own design system. Every field is optional; unset fields fall back to
- * `DEFAULT_CHART_THEME` (the admin-portal look). The customer app passes a theme
+ * `DEFAULT_CHART_THEME` (the admin-portal look). The partner app passes a theme
  * built from its shared `chartTheme` module.
  */
 export interface FinleyChartTheme {

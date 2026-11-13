@@ -5,7 +5,7 @@
 
 `@goflexibl/finley-core`: the single shared source for Finley (the talk-to-your-data
 assistant). Both `ui-admin-portal` (the internal training ground) and `ui-app-new` (the
-customer app) consume it. A shared Finley change is made here once and reaches both
+partner app) consume it. A shared Finley change is made here once and reaches both
 apps through a version bump, so the two can never drift.
 
 ## Commands
@@ -70,7 +70,8 @@ must pass. A change should also be typechecked inside both consuming apps before
   moves here, both apps' guards (`handledAsPendingQuery`) must move with it.
 - All user-visible strings are plain ASCII: no em dashes, curly quotes, arrows or math
   symbols. A `\uXXXX` escape inside a JSX text node renders literally. Check with
-  `grep -nP "[^\x00-\x7F]" src/`.
+  `grep -nP "[^\x00-\x7F]" src/`; `src/plainAscii.test.ts` fails on any non-ASCII
+  character outside a comment.
 - Keep the README module table in sync with `src/index.ts` exports.
 
 <!-- BEGIN team-rules: identical in all five Flexibl repos. Change it in all five together. -->

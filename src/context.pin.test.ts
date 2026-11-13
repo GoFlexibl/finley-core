@@ -1,18 +1,16 @@
 /**
- * PIN test: locks today's Finley module resolution before the business unit / account /
- * Overview rename.
+ * PIN test: locks Finley's fallback module resolution.
  *
  * What it pins: `resolveModuleFromPath` for every route of ui-app-new (App.tsx) and of
- * ui-admin-portal (App.tsx), as of finley-core main 0d94434 (same function body as the
- * v0.8.0 tag both apps pin). It also pins that a registered page context wins over the
+ * ui-admin-portal (App.tsx). It also pins that a registered page context wins over the
  * path (`resolveCurrentModule`), which is how both apps actually reach Finley: pages call
  * their own `useRegisterFinleyContext({ module })`, and the path is only a fallback.
  *
- * Which phase must keep it green: Phases 0-4 keep it green as written. Phase 5
- * (finley-core v0.10.0, rows 5.1-5.2) changes the `/dashboard` and `/customer-performance`
- * rows on purpose: `/overview` and `/dashboard` both resolve to the agreed Overview key, and
- * the Account Performance path(s) to the agreed key. Every OTHER row must stay as it is in
- * that release.
+ * v0.10.0 (Phase 6 of the naming change) moved exactly two rows: the Overview page
+ * (`/overview`, and the old `/dashboard` path that redirects to it) resolves to
+ * 'dashboard', the internal Overview key that stays unchanged; Account Performance
+ * (`/account-performance`, and the old `/customer-performance` path that redirects to it)
+ * resolves to 'account-performance'. Every other row is as it was in v0.8.0.
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { clearFinleyPageContext, resolveCurrentModule, resolveModuleFromPath, setFinleyPageContext } from './context';
@@ -25,9 +23,13 @@ const PARTNER_APP_ROUTES: Array<[string, string]> = [
   ['/upload', 'unknown'],
   ['/partner-upload', 'unknown'],
   ['/credentials', 'unknown'],
+  ['/overview', 'dashboard'],
+  // Old path, redirects to /overview.
   ['/dashboard', 'dashboard'],
   ['/reconciliation', 'reconciliation'],
-  ['/customer-performance', 'customer-performance'],
+  ['/account-performance', 'account-performance'],
+  // Old path, redirects to /account-performance.
+  ['/customer-performance', 'account-performance'],
   ['/reporting', 'reporting'],
   ['/margin-analysis', 'margin-analysis'],
   ['/cohort-analysis', 'cohort-analysis'],
@@ -70,7 +72,7 @@ const ADMIN_PORTAL_ROUTES: Array<[string, string]> = [
   ['/admin/finley-conversations', 'unknown'],
 ];
 
-describe('resolveModuleFromPath today', () => {
+describe('resolveModuleFromPath', () => {
   it.each(PARTNER_APP_ROUTES)('partner app %s -> %s', (path, module) => {
     expect(resolveModuleFromPath(path)).toBe(module);
   });
@@ -79,10 +81,9 @@ describe('resolveModuleFromPath today', () => {
     expect(resolveModuleFromPath(path)).toBe(module);
   });
 
-  it('has no Overview or Account Performance entry yet', () => {
-    // Phase 5 adds these. Until then a page at /overview would fall back to unknown.
-    expect(resolveModuleFromPath('/overview')).toBe('unknown');
-    expect(resolveModuleFromPath('/account-performance')).toBe('unknown');
+  it('never returns the retired customer-performance key', () => {
+    const all = [...PARTNER_APP_ROUTES, ...ADMIN_PORTAL_ROUTES].map(([path]) => resolveModuleFromPath(path));
+    expect(all).not.toContain('customer-performance');
   });
 
   it('checks feed before dashboard, so the first match wins', () => {
@@ -94,11 +95,11 @@ describe('resolveCurrentModule', () => {
   afterEach(() => clearFinleyPageContext());
 
   it('prefers the module a page registered over the path', () => {
-    setFinleyPageContext({ module: 'dashboard', route: '/dashboard', title: 'Dashboard' });
+    setFinleyPageContext({ module: 'dashboard', route: '/overview', title: 'Overview' });
     expect(resolveCurrentModule('/somewhere-else')).toBe('dashboard');
   });
 
   it('falls back to the path when no page registered', () => {
-    expect(resolveCurrentModule('/customer-performance')).toBe('customer-performance');
+    expect(resolveCurrentModule('/account-performance')).toBe('account-performance');
   });
 });
