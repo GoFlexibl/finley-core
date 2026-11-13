@@ -8,7 +8,7 @@ import React from 'react';
  * ChatMessage branch.
  *
  * Domain → blocks lives in the `*Blocks()` builders at the bottom; rendering
- * lives in one place here. Shared by the admin portal and the customer app via
+ * lives in one place here. Shared by the admin portal and the partner app via
  * @goflexibl/finley-core — extend here, do not fork per-app.
  */
 
@@ -147,7 +147,7 @@ const appendNotes = (blocks: Block[], notes: string[]) => {
 export const planBlocks = (p: any, notes: string[] = []): Block[] => {
   const rec = p.recoverable || {}, blk = p.blockedOnData || {}, prov = p.provider || {};
   const blocks: Block[] = [
-    { t: 'header', title: 'Remediation plan', subtitle: [p.period, prov.name, prov.model].filter(Boolean).join(' · ') },
+    { t: 'header', title: 'Remediation plan', subtitle: [p.period, prov.name, prov.model].filter(Boolean).join(' | ') },
     { t: 'tiles', items: [
       { label: 'Recoverable now', value: usd0(rec.undercharge), sub: 'undercharge to collect', tone: 'ok' },
       { label: 'To refund', value: usd0(rec.overcharge), sub: 'overcharge to adjust', tone: 'warn' },
@@ -155,10 +155,10 @@ export const planBlocks = (p: any, notes: string[] = []): Block[] => {
     ] },
   ];
   if (p.concentration) blocks.push({ t: 'text', content: `${p.concentration.topClusters} of ${p.concentration.ofClusters} clusters drive **${Math.round(p.concentration.coversPct)}%** of the recoverable variance, so a few batch fixes clear most of it.` });
-  if (prov.chain) blocks.push({ t: 'chip', text: String(prov.chain).replace(/->/g, '→') });
+  if (prov.chain) blocks.push({ t: 'chip', text: String(prov.chain) });
   blocks.push({ t: 'divider', label: 'Fix billing now', amounts: [
     ...(rec.undercharge > 0 ? [{ text: `+${usd0(rec.undercharge)}`, tone: 'ok' as Tone }] : []),
-    ...(rec.overcharge > 0 ? [{ text: `−${usd0(rec.overcharge)}`, tone: 'warn' as Tone }] : []),
+    ...(rec.overcharge > 0 ? [{ text: `-${usd0(rec.overcharge)}`, tone: 'warn' as Tone }] : []),
   ] });
   const GROUPS = [
     { reasons: ['per_item_rate_mismatch'], label: 'Re-sync rate to contract', tone: 'ok' as Tone },
@@ -172,21 +172,21 @@ export const planBlocks = (p: any, notes: string[] = []): Block[] => {
     blocks.push({ t: 'rows', items: rows.map((c: any) => {
       const isOver = c.direction === 'over';
       const [main, paren] = feeParts(c.feeDescription);
-      return { title: main, titleMuted: paren, subtitle: c.reason === 'per_item_rate_mismatch' ? `${num(c.merchantCount)} merchants · net ${c.direction}` : `${num(c.merchantCount)} merchants`,
-        right: [{ text: `${isOver ? '−' : '+'}${usd0(isOver ? (c.overAmount || c.dollarImpact) : (c.underAmount || c.dollarImpact))}`, tone: isOver ? 'warn' : 'ok' }] };
+      return { title: main, titleMuted: paren, subtitle: c.reason === 'per_item_rate_mismatch' ? `${num(c.merchantCount)} merchants | net ${c.direction}` : `${num(c.merchantCount)} merchants`,
+        right: [{ text: `${isOver ? '-' : '+'}${usd0(isOver ? (c.overAmount || c.dollarImpact) : (c.underAmount || c.dollarImpact))}`, tone: isOver ? 'warn' : 'ok' }] };
     }) });
   }
-  if (prov.fixVerb) blocks.push({ t: 'note', title: 'How every fix above is applied.', body: String(prov.fixVerb).replace(/->/g, '→') });
+  if (prov.fixVerb) blocks.push({ t: 'note', title: 'How every fix above is applied.', body: String(prov.fixVerb) });
   if (blk.clusters?.length) {
-    blocks.push({ t: 'divider', label: 'Blocked on data', amounts: [{ text: `${usd0(blk.exposure)} · ${num(blk.merchantsAffected)} merch.`, tone: 'neutral' }] });
+    blocks.push({ t: 'divider', label: 'Blocked on data', amounts: [{ text: `${usd0(blk.exposure)} | ${num(blk.merchantsAffected)} merch.`, tone: 'neutral' }] });
     blocks.push({ t: 'text', muted: true, content: 'Not lost, only unverifiable until the missing contract data is loaded. Sorted by exposure:' });
     const bt = (c: any) => c.reason === 'discount_rate_not_effective' ? `Load ${c.feeDescription} rates`
       : c.reason === 'fee_not_yet_contracted' ? `Add ${c.feeDescription} to contract`
         : c.reason === 'no_contract_on_file' ? 'Load pricing profiles'
           : c.reason === 'profile_not_yet_effective' ? `Activate ${c.feeDescription} rate` : c.feeDescription;
-    const bs = (c: any) => c.reason === 'discount_rate_not_effective' ? `${num(c.merchantCount)} merchants · pass-through discount unverifiable`
-      : c.reason === 'no_contract_on_file' ? `${num(c.merchantCount)} merchants · ${c.feeDescription} billing, no contract`
-        : `${num(c.merchantCount)} merchants · no contracted basis`;
+    const bs = (c: any) => c.reason === 'discount_rate_not_effective' ? `${num(c.merchantCount)} merchants | pass-through discount unverifiable`
+      : c.reason === 'no_contract_on_file' ? `${num(c.merchantCount)} merchants | ${c.feeDescription} billing, no contract`
+        : `${num(c.merchantCount)} merchants | no contracted basis`;
     blocks.push({ t: 'rows', items: [...blk.clusters].sort((a: any, b: any) => b.exposureAmount - a.exposureAmount).slice(0, 6)
       .map((c: any) => ({ title: bt(c), subtitle: bs(c), right: [{ text: usd0(c.exposureAmount), tone: 'neutral' as Tone }] })) });
   }
@@ -196,16 +196,16 @@ export const planBlocks = (p: any, notes: string[] = []): Block[] => {
 export const summaryBlocks = (sm: any, notes: string[] = []): Block[] => {
   const t = sm.totals;
   return appendNotes([
-    { t: 'header', title: 'Fees Verification', subtitle: `${sm.label} · ${sm.periodsCount} period${sm.periodsCount === 1 ? '' : 's'}` },
+    { t: 'header', title: 'Fees Verification', subtitle: `${sm.label} | ${sm.periodsCount} period${sm.periodsCount === 1 ? '' : 's'}` },
     { t: 'tiles', items: [
       { label: 'Undercharged', value: usd0(t.under), sub: 'billed below contract', tone: 'ok' },
       { label: 'Overcharged', value: usd0(t.over), sub: 'billed above contract', tone: 'warn' },
     ] },
-    { t: 'text', content: `**${t.coverage.toFixed(1)}%** profile coverage · **${t.verRate.toFixed(1)}%** verified · ${num(t.mis)} with mismatches` },
+    { t: 'text', content: `**${t.coverage.toFixed(1)}%** profile coverage | **${t.verRate.toFixed(1)}%** verified | ${num(t.mis)} with mismatches` },
     { t: 'group', label: 'Per period' },
     { t: 'rows', items: sm.periods.map((p: any) => ({
-      title: p.label, subtitle: `${num(p.merchants)} merchants · ${num(p.verified)} verified`,
-      right: [{ text: `+${usd0(p.under)}`, tone: 'ok' }, { text: `−${usd0(p.over)}`, tone: 'warn' }],
+      title: p.label, subtitle: `${num(p.merchants)} merchants | ${num(p.verified)} verified`,
+      right: [{ text: `+${usd0(p.under)}`, tone: 'ok' }, { text: `-${usd0(p.over)}`, tone: 'warn' }],
     })) },
   ], notes);
 };
@@ -216,11 +216,11 @@ export const breakdownBlocks = (bd: any, notes: string[] = []): Block[] => {
     const isOver = sec.dir === 'overcharged';
     const tone: Tone = isOver ? 'warn' : 'ok';
     if (sec.empty) { blocks.push({ t: 'text', muted: true, content: `No ${sec.dir} items in ${bd.period}.` }); continue; }
-    blocks.push({ t: 'divider', label: isOver ? 'Overcharged' : 'Undercharged', amounts: [{ text: `${usd0(sec.total)} · ${num(sec.itemCount)} items · ${num(sec.merchantCount)} merch.`, tone }] });
+    blocks.push({ t: 'divider', label: isOver ? 'Overcharged' : 'Undercharged', amounts: [{ text: `${usd0(sec.total)} | ${num(sec.itemCount)} items | ${num(sec.merchantCount)} merch.`, tone }] });
     blocks.push({ t: 'group', label: 'Top fees', tone });
-    blocks.push({ t: 'rows', items: sec.fees.map((f: any) => ({ title: f.name, subtitle: `${num(f.items)} item${f.items === 1 ? '' : 's'} · ${num(f.merchants || 0)} merchant${f.merchants === 1 ? '' : 's'}`, right: [{ text: usd0(f.amt), tone }] })) });
+    blocks.push({ t: 'rows', items: sec.fees.map((f: any) => ({ title: f.name, subtitle: `${num(f.items)} item${f.items === 1 ? '' : 's'} | ${num(f.merchants || 0)} merchant${f.merchants === 1 ? '' : 's'}`, right: [{ text: usd0(f.amt), tone }] })) });
     blocks.push({ t: 'group', label: 'Top merchants' });
-    blocks.push({ t: 'rows', items: sec.merchants.map((m: any) => ({ title: m.name, subtitle: `${m.mid} · ${num(m.items)} item${m.items === 1 ? '' : 's'}`, right: [{ text: usd0(m.amt), tone }] })) });
+    blocks.push({ t: 'rows', items: sec.merchants.map((m: any) => ({ title: m.name, subtitle: `${m.mid} | ${num(m.items)} item${m.items === 1 ? '' : 's'}`, right: [{ text: usd0(m.amt), tone }] })) });
   }
   return appendNotes(blocks, notes);
 };
@@ -228,12 +228,12 @@ export const breakdownBlocks = (bd: any, notes: string[] = []): Block[] => {
 export const reconBlocks = (r: any, notes: string[] = []): Block[] => {
   const t = r.totals;
   const blocks: Block[] = [
-    { t: 'header', title: 'Reconciliation', subtitle: `${r.label} · ${r.periodsCount} period${r.periodsCount === 1 ? '' : 's'}` },
+    { t: 'header', title: 'Reconciliation', subtitle: `${r.label} | ${r.periodsCount} period${r.periodsCount === 1 ? '' : 's'}` },
     { t: 'tiles', items: [
       { label: 'Unmatched fees', value: usd0(t.unmAmt), sub: `${num(t.unm)} merchants`, tone: 'warn' },
       { label: 'Missing stmt rev.', value: usd0(t.missStmtRev), sub: `${num(t.missStmt)} statements`, tone: 'neutral' },
     ] },
-    { t: 'text', content: `**${t.coverage.toFixed(1)}%** statement coverage · **${t.reconRate.toFixed(1)}%** reconciled · ${num(t.missRes)} missing residual` },
+    { t: 'text', content: `**${t.coverage.toFixed(1)}%** statement coverage | **${t.reconRate.toFixed(1)}%** reconciled | ${num(t.missRes)} missing residual` },
   ];
   if (r.ranked) {
     blocks.push({ t: 'group', label: `Top periods by ${r.ranked.metricLabel}`, tone: 'warn' });
@@ -241,7 +241,7 @@ export const reconBlocks = (r: any, notes: string[] = []): Block[] => {
   } else {
     blocks.push({ t: 'group', label: 'Per period' });
     blocks.push({ t: 'rows', items: (r.periods || []).map((p: any) => ({
-      title: p.label, subtitle: `${num(p.merchants)} merchants · ${num(p.reconciled)} reconciled`,
+      title: p.label, subtitle: `${num(p.merchants)} merchants | ${num(p.reconciled)} reconciled`,
       right: [{ text: usd0(p.unmatched), tone: 'warn' }, { text: `${num(p.missingStatements)} missing`, muted: true }],
     })) });
   }

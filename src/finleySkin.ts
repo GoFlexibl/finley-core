@@ -3,7 +3,7 @@
 // indigo accent, spark-glyph header, finding-style bubbles, rounded composer.
 //
 // Single source of truth: both the admin portal (ui-admin-portal) and the
-// customer app (ui-app-new) inject this string via a <style> tag in their chat
+// partner app (ui-app-new) inject this string via a <style> tag in their chat
 // panel root. Do not fork per-app — extend here.
 export const FINLEY_SKIN = `
 @import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
