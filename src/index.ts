@@ -17,6 +17,12 @@ export {
   metricAmbiguity,
 } from './metrics';
 
+// The interchange story panel: one task, with the levers under it. Drawn by
+// the partner app's feed and by the admin portal's preview of it, which has to
+// be the same markup or the preview is not a preview.
+export { StoryTaskBlock, merchantsText } from './components/StoryTaskBlock';
+export type { StoryTask, StoryLever, StoryKeeps, StoryTaskTokens } from './components/StoryTaskBlock';
+
 // Types
 export type {
   FinleyResponseType,
