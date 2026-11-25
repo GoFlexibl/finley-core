@@ -11,9 +11,11 @@ import { Box } from '@mui/material';
  * will do without having to be read.
  *
  * It lives here rather than in either app because the story task block does,
- * and that block is drawn by both of them. The partner app had this same
- * control hand-rolled twice already (common/Disclosure.tsx and
- * merchantReconciliationBeta); this is the one both apps can import.
+ * and that block is drawn by both of them. The partner app has this same
+ * control twice more (common/Disclosure.tsx and merchantReconciliationBeta).
+ * Neither was folded into this one: common/Disclosure takes a count the
+ * forecast page passes and this does not, so consolidating them is its own
+ * change rather than a quiet behaviour swap.
  *
  * Colours come from the app drawing it, like every other part of the block.
  */
@@ -24,17 +26,24 @@ export interface DisclosureTokens {
 }
 
 export const Chevron: React.FC<{ open: boolean }> = ({ open }) => (
-  <Box
-    component="svg"
+  // A plain svg, not Box component="svg". MUI reads width and height as system
+  // props, so width="14" became the CSS `width: 14`, which has no unit and is
+  // dropped: the chevron lost its size and drew at the browser's default,
+  // squeezing its own label into a column three words tall.
+  <svg
     width="14"
     height="14"
     viewBox="0 0 12 12"
     fill="none"
     aria-hidden="true"
-    sx={{ flex: 'none', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}
+    style={{
+      flex: 'none',
+      transform: open ? 'rotate(180deg)' : 'none',
+      transition: 'transform .15s',
+    }}
   >
     <path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </Box>
+  </svg>
 );
 
 /** Short. The chevron says "opens"; the label only needs to say what. */
@@ -63,7 +72,11 @@ export const Disclosure: React.FC<{
       fontSize: 13,
       fontWeight: 700,
       cursor: 'pointer',
+      whiteSpace: 'nowrap',
       '&:hover': { background: tokens.hairSoft },
+      // Inset, because the card that holds these clips its overflow and an
+      // outline painted outside the border box is clipped to a hairline.
+      '&:focus-visible': { outline: 'none', boxShadow: `inset 0 0 0 2px ${tokens.inkSoft}` },
     }}
   >
     <Chevron open={open} />

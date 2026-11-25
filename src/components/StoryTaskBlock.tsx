@@ -114,6 +114,9 @@ export const StoryTaskBlock: React.FC<{ task: StoryTask; tokens: StoryTaskTokens
           textAlign: 'left',
           cursor: 'pointer',
           '&:hover': { background: tokens.hairSoft },
+          // Inset: this card clips its overflow for the rounded hover, and an
+          // outline painted outside the border box would be clipped with it.
+          '&:focus-visible': { outline: 'none', boxShadow: `inset 0 0 0 2px ${tokens.inkSoft}` },
         }}
       >
         <Box sx={{ marginTop: '3px', color: tokens.inkSoft, display: 'flex' }}>

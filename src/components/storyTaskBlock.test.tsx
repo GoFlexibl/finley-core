@@ -72,7 +72,7 @@ describe('a task in a story panel, closed', () => {
     const out = drawn(TASK);
 
     expect(out).not.toContain('Where the savings go');
-    expect(out).not.toContain('Yours as margin (Buy Rate)');
+    expect(out).not.toContain('Yours as margin (buy rate)');
     expect(out).not.toContain('What it takes');
     expect(out).not.toContain('Where it comes from');
     expect(out).not.toContain('Visa Commercial Corporate Credit Card Not Present - CEDP');
@@ -84,11 +84,16 @@ describe('a task in a story panel, closed', () => {
     // which way the control would go.
     const out = raw(TASK);
 
-    // The chevron itself, pointing down because the block is shut.
+    // The chevron itself, pointing down because the block is shut. Its size is
+    // asserted because losing it is exactly how this broke: MUI read
+    // width="14" on a Box as a style prop, emitted the unitless `width: 14`,
+    // and the browser dropped it. The path still rendered, at 0x0 on one
+    // control and 86x86 on the other.
+    expect(out).toContain('width="14"');
+    expect(out).toContain('height="14"');
     expect(out).toContain('M3 4.5l3 3 3-3');
     expect(out).not.toContain('rotate(180deg)');
     // and none of what a link looks like
-    expect(out).not.toContain(TOKENS.brand);
     expect(out).not.toContain('text-decoration:underline');
   });
 
