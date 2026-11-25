@@ -26,8 +26,10 @@ export interface StoryLever {
   merchant_count: number;
 }
 
-/** One line of a saving: who keeps it, how much, and - on a lever, never on a
- * task - how many merchants. */
+/** One line of a saving: where it goes, how much, and - on a lever, never on
+ * a task - how many merchants. The label names the pricing model that decides
+ * which way the money goes; the sentence explaining that is said once, on the
+ * card, so it is not repeated under every task here. */
 export interface StoryKeeps {
   label: string;
   saving_display: string;
@@ -94,7 +96,7 @@ export const StoryTaskBlock: React.FC<{ task: StoryTask; tokens: StoryTaskTokens
 
       {task.goes_to.length > 0 && (
         <Box sx={{ marginTop: '13px' }}>
-          <Typography sx={label(tokens.faint)}>Who keeps it</Typography>
+          <Typography sx={label(tokens.faint)}>Where the savings go</Typography>
           {task.goes_to.map((row) => (
             <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '6px' }}>
               <Typography sx={{ fontSize: 13.5, lineHeight: 1.5, color: tokens.inkSoft }}>

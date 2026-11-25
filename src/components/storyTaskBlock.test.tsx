@@ -20,8 +20,8 @@ const TASK: StoryTask = {
   name: 'Send Level 2 and Level 3 data with commercial card payments',
   saving_display: '$14,813',
   goes_to: [
-    { label: 'Your merchants keep this', saving_display: '$9,813' },
-    { label: 'Yours as margin', saving_display: '$5,000' },
+    { label: 'Yours as margin (buy rate)', saving_display: '$5,000' },
+    { label: 'Your merchants keep this (interchange plus)', saving_display: '$9,813' },
   ],
   qualification: ['Both Level 2 and Level 3 have to be there.'],
   merchant_action: 'Pass the tax amount and the line-item detail.',
@@ -54,13 +54,21 @@ describe('a task in a story panel', () => {
     expect(out).toContain('$14,813');
   });
 
-  it('says who keeps it, and counts merchants only on a lever', () => {
+  it('heads the split with where the savings go', () => {
+    // Not "who keeps it": the question a partner is asking of these two
+    // figures is where their money went, not who owns it.
+    expect(drawn(TASK)).toContain('Where the savings go');
+  });
+
+  it('names the pricing model on each line, and counts merchants only on a lever', () => {
     // One merchant is on several levers, so a count across the task would
-    // claim more merchants than the partner has.
+    // claim more merchants than the partner has. The backend sends the model
+    // in the label, so a bracket here is the model, never a count.
     const out = drawn(TASK);
 
-    expect(out).toContain('Your merchants keep this');
-    expect(out).not.toContain('Your merchants keep this (');
+    expect(out).toContain('Yours as margin (buy rate)');
+    expect(out).toContain('Your merchants keep this (interchange plus)');
+    expect(out).not.toMatch(/\(\d+ merchants?\)/);
     expect(out).toContain('Across 12 merchants');
   });
 
