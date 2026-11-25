@@ -21,7 +21,7 @@ export {
 // the partner app's feed and by the admin portal's preview of it, which has to
 // be the same markup or the preview is not a preview.
 export { StoryTaskBlock, merchantsText } from './components/StoryTaskBlock';
-export type { StoryTask, StoryLever, StoryKeeps, StoryTaskTokens } from './components/StoryTaskBlock';
+export type { StoryTask, StoryLever, StoryKeeps, StoryPlanStep, StoryTaskTokens } from './components/StoryTaskBlock';
 
 // The chevron that opens something below it. Shared so neither app writes a
 // third hand-rolled one, and so the story task block and the partner app's own
