@@ -1,6 +1,6 @@
 {
   "name": "@goflexibl/finley-core",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Shared Finley (talk-to-your-data assistant) core: types, value formatters, API client factory, follow-ups, the FinleyDataRender component, the designed-card framework (FinleyBlocks + FINLEY_SKIN), and the interchange story task block. Single source of truth consumed by both the admin portal and the partner app.",
   "type": "module",
   "license": "UNLICENSED",
