@@ -17,11 +17,12 @@ export {
   metricAmbiguity,
 } from './metrics';
 
-// The interchange story panel: one task, with the levers under it. Drawn by
-// the partner app's feed and by the admin portal's preview of it, which has to
-// be the same markup or the preview is not a preview.
-export { StoryTaskBlock, merchantsText } from './components/StoryTaskBlock';
-export type { StoryTask, StoryLever, StoryKeeps, StoryPlanStep, StoryTaskTokens } from './components/StoryTaskBlock';
+// The interchange story panel: what the story takes, and the levers the money
+// comes from. Drawn by the partner app's feed and by the admin portal's
+// preview of it, which has to be the same markup or the preview is not a
+// preview.
+export { StoryWorkBlock, merchantsText } from './components/StoryWork';
+export type { StoryLever, StoryKeeps, StoryPlanStep, StoryWorkTokens } from './components/StoryWork';
 
 // The chevron that opens something below it. Shared so neither app writes a
 // third hand-rolled one, and so the story task block and the partner app's own
