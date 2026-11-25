@@ -23,9 +23,20 @@ const TASK: StoryTask = {
     { label: 'Yours as margin (buy rate)', saving_display: '$5,000' },
     { label: 'Your merchants keep this (interchange plus)', saving_display: '$9,813' },
   ],
-  qualification: ['Both Level 2 and Level 3 have to be there.'],
-  merchant_action: 'Pass the tax amount and the line-item detail.',
-  acquirer_action: 'Enrol the merchants and map the fields.',
+  plan: [
+    {
+      what: 'Pass the tax amount and the line-item detail',
+      detail: 'Both Level 2 and Level 3 have to be there.',
+      owner: 'you',
+      done_when: 'both levels reach the clearing record',
+    },
+    {
+      what: 'Map the fields',
+      detail: '',
+      owner: 'acquirer',
+      done_when: 'they land in the right positions',
+    },
+  ],
   levers: [
     {
       lever_id: 'visa.enrich.cedp_corporate',
@@ -73,7 +84,7 @@ describe('a task in a story panel, closed', () => {
 
     expect(out).not.toContain('Where the savings go');
     expect(out).not.toContain('Yours as margin (buy rate)');
-    expect(out).not.toContain('What it takes');
+    expect(out).not.toContain('The plan');
     expect(out).not.toContain('Where it comes from');
     expect(out).not.toContain('Visa Commercial Corporate Credit Card Not Present - CEDP');
   });

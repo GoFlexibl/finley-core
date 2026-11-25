@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography } from '@mui/material';
-import { Chevron, Disclosure } from './Disclosure';
+import { Chevron } from './Disclosure';
 
 /**
  * One task of an interchange story, as the partner's feed panel draws it and
@@ -37,6 +37,20 @@ export interface StoryKeeps {
   merchant_count?: number;
 }
 
+/** One step of the plan: what to do, how, who does it, and the state that says
+ * it is finished. It replaced three fields - what qualifies, what your
+ * merchants do, what your acquirer does - which a partner read as description
+ * and could not start from. */
+export interface StoryPlanStep {
+  what: string;
+  detail: string;
+  /** One of exactly three the backend validates to. A step nobody owns is not
+   * a step, and a model free to name an owner invents a team the partner does
+   * not have. */
+  owner: 'you' | 'acquirer' | 'merchants';
+  done_when: string;
+}
+
 /** The work it would take, and the levers whose savings it would get. Their
  * figures add up to the task's, and the tasks add up to the total on the
  * card. */
@@ -45,9 +59,7 @@ export interface StoryTask {
   name: string;
   saving_display: string;
   goes_to: StoryKeeps[];
-  qualification: string[];
-  merchant_action: string;
-  acquirer_action: string;
+  plan: StoryPlanStep[];
   levers: StoryLever[];
 }
 
@@ -66,6 +78,14 @@ export interface StoryTaskTokens {
 /** A count a partner reads, with the noun to match it. */
 export const merchantsText = (count: number): string => (count === 1 ? '1 merchant' : `${count} merchants`);
 
+/** What each owner is called in front of a partner. The backend validates to
+ * the key; this is the only place the words live. */
+const OWNER: Record<StoryPlanStep['owner'], string> = {
+  you: 'You',
+  acquirer: 'Your acquirer',
+  merchants: 'Your merchants',
+};
+
 const label = (color: string) => ({
   fontSize: 10.5,
   fontWeight: 700,
@@ -75,20 +95,11 @@ const label = (color: string) => ({
   lineHeight: 1.35,
 });
 
-const DetailText: React.FC<{ title: string; text: string; tokens: StoryTaskTokens }> = ({ title, text, tokens }) => (
-  <Box sx={{ marginTop: '14px' }}>
-    <Typography sx={label(tokens.faint)}>{title}</Typography>
-    <Typography sx={{ fontSize: 13.5, lineHeight: 1.6, color: tokens.inkSoft, marginTop: '5px' }}>{text}</Typography>
-  </Box>
-);
-
 export const StoryTaskBlock: React.FC<{ task: StoryTask; tokens: StoryTaskTokens }> = ({ task, tokens }) => {
   // The task itself, and what it takes inside it. Both start closed: a story
   // of four tasks opened all the way is a wall, and the reader came to pick
   // one piece of work, not to read every piece at once.
   const [open, setOpen] = useState(false);
-  const [takes, setTakes] = useState(false);
-  const hasDetail = task.qualification.length > 0 || task.merchant_action !== '' || task.acquirer_action !== '';
 
   return (
     <Box sx={{ border: `1px solid ${tokens.hairSoft}`, borderRadius: tokens.rMd, marginTop: '12px', overflow: 'hidden' }}>
@@ -150,39 +161,67 @@ export const StoryTaskBlock: React.FC<{ task: StoryTask; tokens: StoryTaskTokens
         </Box>
       )}
 
-      {hasDetail && (
-        <>
-          <Disclosure open={takes} onToggle={() => setTakes(!takes)} label="What it takes" tokens={tokens} />
-
-          {takes && (
-            <Box>
-              {task.qualification.length > 0 && (
-                <Box sx={{ marginTop: '14px' }}>
-                  <Typography sx={label(tokens.faint)}>What qualifies</Typography>
-                  <Box component="ul" sx={{ margin: '5px 0 0', paddingLeft: '18px' }}>
-                    {task.qualification.map((line, at) => (
-                      <Box
-                        component="li"
-                        // Two lines of a task can read the same, so the
-                        // position is the only key that is certainly unique.
-                        key={`${at}-${line}`}
-                        sx={{ fontSize: 13.5, lineHeight: 1.6, color: tokens.inkSoft, marginTop: '4px' }}
-                      >
-                        {line}
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              )}
-              {task.merchant_action && (
-                <DetailText title="What your merchants do" text={task.merchant_action} tokens={tokens} />
-              )}
-              {task.acquirer_action && (
-                <DetailText title="What your acquirer does" text={task.acquirer_action} tokens={tokens} />
-              )}
+      {task.plan.length > 0 && (
+        <Box sx={{ marginTop: '16px' }}>
+          <Typography sx={label(tokens.faint)}>The plan</Typography>
+          {task.plan.map((step, at) => (
+            <Box
+              // Two steps can read the same, so the position is the only key
+              // that is certainly unique.
+              key={`${at}-${step.what}`}
+              sx={{ display: 'flex', gap: '11px', marginTop: '11px' }}
+            >
+              <Box
+                sx={{
+                  flex: 'none',
+                  width: 19,
+                  height: 19,
+                  borderRadius: '50%',
+                  background: tokens.hairSoft,
+                  color: tokens.inkSoft,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: '2px',
+                }}
+              >
+                {at + 1}
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: tokens.ink, lineHeight: 1.45 }}>
+                  {step.what}
+                </Typography>
+                {step.detail && (
+                  <Typography sx={{ fontSize: 13, lineHeight: 1.55, color: tokens.inkSoft, marginTop: '2px' }}>
+                    {step.detail}
+                  </Typography>
+                )}
+                {step.done_when && (
+                  <Typography sx={{ fontSize: 12.5, color: tokens.faint, marginTop: '3px' }}>
+                    <Box
+                      component="span"
+                      sx={{
+                        display: 'inline-block',
+                        background: tokens.hairSoft,
+                        borderRadius: '5px',
+                        padding: '1px 7px',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: tokens.inkSoft,
+                        marginRight: '6px',
+                      }}
+                    >
+                      {OWNER[step.owner]}
+                    </Box>
+                    Done when {step.done_when}
+                  </Typography>
+                )}
+              </Box>
             </Box>
-          )}
-        </>
+          ))}
+        </Box>
       )}
 
       <Box sx={{ marginTop: '16px', borderTop: `1px solid ${tokens.hairSoft}`, paddingTop: '12px' }}>
