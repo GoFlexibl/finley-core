@@ -46,7 +46,12 @@ const TASK: StoryTask = {
 
 const drawn = (task: StoryTask) => words(renderToStaticMarkup(<StoryTaskBlock task={task} tokens={TOKENS} />));
 
-describe('a task in a story panel', () => {
+describe('a task in a story panel, closed', () => {
+  // It starts closed, so what these assert is the whole of what a reader sees
+  // before they choose this piece of work. Opening it needs a DOM, which this
+  // package has no runner for; the partner app drives that (StoryCard.test).
+  const raw = (task: StoryTask) => renderToStaticMarkup(<StoryTaskBlock task={task} tokens={TOKENS} />);
+
   it('leads with the work and what it is worth', () => {
     const out = drawn(TASK);
 
@@ -54,46 +59,37 @@ describe('a task in a story panel', () => {
     expect(out).toContain('$14,813');
   });
 
-  it('heads the split with where the savings go', () => {
-    // Not "who keeps it": the question a partner is asking of these two
-    // figures is where their money went, not who owns it.
-    expect(drawn(TASK)).toContain('Where the savings go');
+  it('makes the title itself the control, and says it is shut', () => {
+    // The whole row, not a chevron beside it: the title is what a reader aims
+    // at, and a target the width of the card is one nobody misses.
+    const out = raw(TASK);
+
+    expect(out).toContain('aria-expanded="false"');
+    expect(out).toMatch(/<button[^>]*>.*Send Level 2 and Level 3 data/s);
   });
 
-  it('names the pricing model on each line, and counts merchants only on a lever', () => {
-    // One merchant is on several levers, so a count across the task would
-    // claim more merchants than the partner has. The backend sends the model
-    // in the label, so a bracket here is the model, never a count.
+  it('holds everything else back until it is opened', () => {
     const out = drawn(TASK);
 
-    expect(out).toContain('Yours as margin (buy rate)');
-    expect(out).toContain('Your merchants keep this (interchange plus)');
-    expect(out).not.toMatch(/\(\d+ merchants?\)/);
-    expect(out).toContain('Across 12 merchants');
-  });
-
-  it('folds what it takes away until it is asked for', () => {
-    const out = drawn(TASK);
-
-    expect(out).toContain('What it takes');
-    expect(out).not.toContain('Both Level 2 and Level 3 have to be there.');
-  });
-
-  it('offers nothing to open when there was nothing to write', () => {
-    const out = drawn({ ...TASK, qualification: [], merchant_action: '', acquirer_action: '' });
-
+    expect(out).not.toContain('Where the savings go');
+    expect(out).not.toContain('Yours as margin (Buy Rate)');
     expect(out).not.toContain('What it takes');
-    expect(out).toContain('Where it comes from');
+    expect(out).not.toContain('Where it comes from');
+    expect(out).not.toContain('Visa Commercial Corporate Credit Card Not Present - CEDP');
   });
 
-  it('lists every lever with the figure the backend sent', () => {
-    const out = drawn(TASK);
+  it('opens with a chevron rather than a blue link', () => {
+    // A link's underline and blue say "this takes you somewhere". Nothing is
+    // navigated to here, and the verb in a label was the only thing saying
+    // which way the control would go.
+    const out = raw(TASK);
 
-    expect(out).toContain('Visa Commercial Corporate Credit Card Not Present - CEDP');
-    expect(out).toContain('$7,606');
-    expect(out).toContain('$7,207');
-    // A lever the dashboard counted no merchants on says nothing about them.
-    expect(out).not.toContain('Across 0 merchants');
+    // The chevron itself, pointing down because the block is shut.
+    expect(out).toContain('M3 4.5l3 3 3-3');
+    expect(out).not.toContain('rotate(180deg)');
+    // and none of what a link looks like
+    expect(out).not.toContain(TOKENS.brand);
+    expect(out).not.toContain('text-decoration:underline');
   });
 
   it('counts one merchant in the singular', () => {

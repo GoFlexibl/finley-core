@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
+import { Chevron, Disclosure } from './Disclosure';
 
 /**
  * One task of an interchange story, as the partner's feed panel draws it and
@@ -82,20 +83,55 @@ const DetailText: React.FC<{ title: string; text: string; tokens: StoryTaskToken
 );
 
 export const StoryTaskBlock: React.FC<{ task: StoryTask; tokens: StoryTaskTokens }> = ({ task, tokens }) => {
+  // The task itself, and what it takes inside it. Both start closed: a story
+  // of four tasks opened all the way is a wall, and the reader came to pick
+  // one piece of work, not to read every piece at once.
   const [open, setOpen] = useState(false);
+  const [takes, setTakes] = useState(false);
   const hasDetail = task.qualification.length > 0 || task.merchant_action !== '' || task.acquirer_action !== '';
 
   return (
-    <Box sx={{ border: `1px solid ${tokens.hairSoft}`, borderRadius: tokens.rMd, padding: '16px 18px', marginTop: '12px' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: '14px', alignItems: 'flex-start' }}>
-        <Typography sx={{ fontSize: 15, fontWeight: 700, color: tokens.ink, lineHeight: 1.4 }}>{task.name}</Typography>
+    <Box sx={{ border: `1px solid ${tokens.hairSoft}`, borderRadius: tokens.rMd, marginTop: '12px', overflow: 'hidden' }}>
+      {/* The whole row is the control, not a chevron beside it: the title is
+          what a reader aims at, and a target the width of the card is one
+          nobody misses. The chevron sits left of the title so it stays put
+          when a long name wraps. */}
+      <Box
+        component="button"
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '14px',
+          width: '100%',
+          padding: '16px 18px',
+          border: 0,
+          background: 'transparent',
+          font: 'inherit',
+          color: tokens.ink,
+          textAlign: 'left',
+          cursor: 'pointer',
+          '&:hover': { background: tokens.hairSoft },
+        }}
+      >
+        <Box sx={{ marginTop: '3px', color: tokens.inkSoft, display: 'flex' }}>
+          <Chevron open={open} />
+        </Box>
+        <Typography sx={{ flex: 1, fontSize: 15, fontWeight: 700, color: tokens.ink, lineHeight: 1.4 }}>
+          {task.name}
+        </Typography>
         <Typography sx={{ fontSize: 16, fontWeight: 700, color: tokens.ink, whiteSpace: 'nowrap' }}>
           {task.saving_display}
         </Typography>
       </Box>
 
+      {open && (
+      <Box sx={{ padding: '0 18px 16px' }}>
+
       {task.goes_to.length > 0 && (
-        <Box sx={{ marginTop: '13px' }}>
+        <Box sx={{ marginTop: '3px' }}>
           <Typography sx={label(tokens.faint)}>Where the savings go</Typography>
           {task.goes_to.map((row) => (
             <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '6px' }}>
@@ -113,25 +149,9 @@ export const StoryTaskBlock: React.FC<{ task: StoryTask; tokens: StoryTaskTokens
 
       {hasDetail && (
         <>
-          <Button
-            onClick={() => setOpen(!open)}
-            aria-expanded={open}
-            sx={{
-              marginTop: '12px',
-              padding: 0,
-              minWidth: 0,
-              fontSize: 13,
-              fontWeight: 700,
-              textTransform: 'none',
-              color: tokens.brand,
-              background: 'none',
-              '&:hover': { background: 'none', textDecoration: 'underline' },
-            }}
-          >
-            {open ? 'Hide what it takes' : 'What it takes'}
-          </Button>
+          <Disclosure open={takes} onToggle={() => setTakes(!takes)} label="What it takes" tokens={tokens} />
 
-          {open && (
+          {takes && (
             <Box>
               {task.qualification.length > 0 && (
                 <Box sx={{ marginTop: '14px' }}>
@@ -185,6 +205,8 @@ export const StoryTaskBlock: React.FC<{ task: StoryTask; tokens: StoryTaskTokens
           </Box>
         ))}
       </Box>
+      </Box>
+      )}
     </Box>
   );
 };

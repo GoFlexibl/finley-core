@@ -23,6 +23,12 @@ export {
 export { StoryTaskBlock, merchantsText } from './components/StoryTaskBlock';
 export type { StoryTask, StoryLever, StoryKeeps, StoryTaskTokens } from './components/StoryTaskBlock';
 
+// The chevron that opens something below it. Shared so neither app writes a
+// third hand-rolled one, and so the story task block and the partner app's own
+// disclosures look like the same control.
+export { Disclosure, Chevron } from './components/Disclosure';
+export type { DisclosureTokens } from './components/Disclosure';
+
 // Types
 export type {
   FinleyResponseType,
