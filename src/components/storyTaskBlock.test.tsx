@@ -20,8 +20,8 @@ const TASK: StoryTask = {
   name: 'Send Level 2 and Level 3 data with commercial card payments',
   saving_display: '$14,813',
   goes_to: [
-    { label: 'Yours as margin (buy rate)', saving_display: '$5,000' },
-    { label: 'Your merchants keep this (interchange plus)', saving_display: '$9,813' },
+    { label: 'Yours as margin (Buy Rate)', saving_display: '$5,000' },
+    { label: 'Your merchants keep this (IC++)', saving_display: '$9,813' },
   ],
   plan: [
     {
@@ -57,10 +57,10 @@ const TASK: StoryTask = {
 
 const drawn = (task: StoryTask) => words(renderToStaticMarkup(<StoryTaskBlock task={task} tokens={TOKENS} />));
 
-describe('a task in a story panel, closed', () => {
-  // It starts closed, so what these assert is the whole of what a reader sees
-  // before they choose this piece of work. Opening it needs a DOM, which this
-  // package has no runner for; the partner app drives that (StoryCard.test).
+describe('a task in a story panel', () => {
+  // It collapsed behind its own title for a few hours. The plan is the reason
+  // a partner opened the story, and every task carries a different one, so a
+  // second click hid the only thing on the card they can act on.
   const raw = (task: StoryTask) => renderToStaticMarkup(<StoryTaskBlock task={task} tokens={TOKENS} />);
 
   it('leads with the work and what it is worth', () => {
@@ -70,42 +70,47 @@ describe('a task in a story panel, closed', () => {
     expect(out).toContain('$14,813');
   });
 
-  it('makes the title itself the control, and says it is shut', () => {
-    // The whole row, not a chevron beside it: the title is what a reader aims
-    // at, and a target the width of the card is one nobody misses.
-    const out = raw(TASK);
-
-    expect(out).toContain('aria-expanded="false"');
-    expect(out).toMatch(/<button[^>]*>.*Send Level 2 and Level 3 data/s);
-  });
-
-  it('holds everything else back until it is opened', () => {
+  it('shows the plan without being asked, each step owned', () => {
     const out = drawn(TASK);
 
-    expect(out).not.toContain('Where the savings go');
-    expect(out).not.toContain('Yours as margin (buy rate)');
-    expect(out).not.toContain('The plan');
-    expect(out).not.toContain('Where it comes from');
-    expect(out).not.toContain('Visa Commercial Corporate Credit Card Not Present - CEDP');
+    expect(out).toContain('The plan');
+    expect(out).toContain('Pass the tax amount and the line-item detail');
+    expect(out).toContain('Done when both levels reach the clearing record');
+    expect(out).toContain('You');
+    expect(out).toContain('Your acquirer');
   });
 
-  it('opens with a chevron rather than a blue link', () => {
-    // A link's underline and blue say "this takes you somewhere". Nothing is
-    // navigated to here, and the verb in a label was the only thing saying
-    // which way the control would go.
-    const out = raw(TASK);
+  it('shows the split and the levers with it', () => {
+    const out = drawn(TASK);
 
-    // The chevron itself, pointing down because the block is shut. Its size is
-    // asserted because losing it is exactly how this broke: MUI read
-    // width="14" on a Box as a style prop, emitted the unitless `width: 14`,
-    // and the browser dropped it. The path still rendered, at 0x0 on one
-    // control and 86x86 on the other.
-    expect(out).toContain('width="14"');
-    expect(out).toContain('height="14"');
-    expect(out).toContain('M3 4.5l3 3 3-3');
-    expect(out).not.toContain('rotate(180deg)');
-    // and none of what a link looks like
-    expect(out).not.toContain('text-decoration:underline');
+    expect(out).toContain('Where the savings go');
+    expect(out).toContain('Where it comes from');
+    expect(out).toContain('Across 12 merchants');
+    // A lever the dashboard counted no merchants on says nothing about them.
+    expect(out).not.toContain('Across 0 merchants');
+  });
+
+  it('is not a control any more', () => {
+    // Nothing opens or closes, so nothing claims to.
+    expect(raw(TASK)).not.toContain('aria-expanded');
+  });
+
+  it('says nothing about a plan a task has none of', () => {
+    const out = drawn({ ...TASK, plan: [] });
+
+    expect(out).not.toContain('The plan');
+    expect(out).toContain('Where it comes from');
+  });
+
+  it('names the pricing model on each line, and counts merchants only on a lever', () => {
+    // One merchant is on several levers, so a count across the task would
+    // claim more merchants than the partner has. The backend sends the model
+    // in the label, so a bracket here is the model, never a count.
+    const out = drawn(TASK);
+
+    expect(out).toContain('Yours as margin (Buy Rate)');
+    expect(out).toContain('Your merchants keep this (IC++)');
+    expect(out).not.toMatch(/\(\d+ merchants?\)/);
   });
 
   it('counts one merchant in the singular', () => {
