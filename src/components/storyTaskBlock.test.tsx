@@ -68,7 +68,7 @@ describe('a task in a story panel', () => {
 
     expect(out).toContain('Yours as margin (buy rate)');
     expect(out).toContain('Your merchants keep this (interchange plus)');
-    expect(out).not.toContain(' merchants)');
+    expect(out).not.toMatch(/\(\d+ merchants?\)/);
     expect(out).toContain('Across 12 merchants');
   });
 
