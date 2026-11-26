@@ -9,6 +9,7 @@ import {
   type StoryLever,
   type StoryPlanStep,
   type StoryWorkTokens,
+  barWidth,
 } from './StoryWork';
 
 // The words, without the styles MUI renders around them.
@@ -17,9 +18,14 @@ const words = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' 
 const TOKENS: StoryWorkTokens = {
   ink: '#1f2a3a',
   inkSoft: '#3a4658',
-  muted: '#737d92',
   hair: '#e8eaf0',
   hairSoft: '#eef0f5',
+  paper: '#f4f6f9',
+  card: '#ffffff',
+  brand: '#7FABFF',
+  brandTint: '#eef4ff',
+  brandRing: '#d4e3ff',
+  brandDeep: '#4f76e6',
 };
 
 const PLAN: StoryPlanStep[] = [
@@ -56,9 +62,9 @@ const LEVERS: StoryLever[] = [
   },
 ];
 
-const raw = (plan: StoryPlanStep[] = PLAN, levers: StoryLever[] = LEVERS) =>
-  renderToStaticMarkup(<StoryWorkBlock plan={plan} levers={levers} tokens={TOKENS} />);
-const drawn = (plan?: StoryPlanStep[], levers?: StoryLever[]) => words(raw(plan, levers));
+const raw = (plan: StoryPlanStep[] = PLAN, levers: StoryLever[] = LEVERS, total?: string) =>
+  renderToStaticMarkup(<StoryWorkBlock plan={plan} levers={levers} tokens={TOKENS} total={total} />);
+const drawn = (plan?: StoryPlanStep[], levers?: StoryLever[], total?: string) => words(raw(plan, levers, total));
 
 describe('what a story takes', () => {
   it('shows the plan without being asked, each step owned', () => {
@@ -138,5 +144,59 @@ describe('what a story takes', () => {
   it('says nothing at all when neither count is there', () => {
     expect(reachText({})).toBe('');
     expect(reachText({ account_count: 0, merchant_count: 0 })).toBe('');
+  });
+});
+
+describe('the share of the total each source is', () => {
+  it('draws no bar for a story the backend sent no share with', () => {
+    // Every story drafted before the backend counted shares. A bar of a
+    // guessed width is a claim about the breakdown, on a partner's feed.
+    expect(barWidth(undefined)).toBeNull();
+    expect(raw()).not.toContain('border-radius:999px');
+  });
+
+  it('draws the bar at the width the backend sent', () => {
+    const html = raw(PLAN, [{ ...LEVERS[0], share_pct: 59.7 }]);
+
+    expect(html).toContain('width:59.7%');
+  });
+
+  it('keeps a bar inside its track whatever the backend sends', () => {
+    // Not arithmetic on a partner's money: the guard that stops a share of
+    // 120, or a negative one, from drawing outside the rail.
+    expect(barWidth(120)).toBe('100%');
+    expect(barWidth(0)).toBeNull();
+    expect(barWidth(-4)).toBeNull();
+    expect(barWidth(Number.NaN)).toBeNull();
+  });
+
+  it('says what the bars are shares of, and only when it has the figure', () => {
+    // The figure is its own span, so the emotion rule for it lands between the
+    // two halves of the sentence in the static markup.
+    const withTotal = drawn(PLAN, [{ ...LEVERS[0], share_pct: 59.7 }], '$2,346,903');
+    expect(withTotal).toContain('share of the');
+    expect(withTotal).toContain('$2,346,903 total.');
+
+    // A footnote naming no figure explains nothing.
+    expect(drawn(PLAN, [{ ...LEVERS[0], share_pct: 59.7 }])).not.toContain('share of the');
+    // And there is nothing to explain when no bar was drawn.
+    expect(drawn(PLAN, LEVERS, '$2,346,903')).not.toContain('share of the');
+  });
+});
+
+describe('what a screen reader is given', () => {
+  it('names its two sections with real headings', () => {
+    // They were Typography defaults, so they rendered as paragraphs: four
+    // steps into a dialog that draws no title, there was nothing to jump
+    // between and nothing naming what you were in.
+    const html = raw();
+
+    expect(html).toContain('<h3');
+    expect(html.match(/<h3/g)).toHaveLength(2);
+  });
+
+  it('says how long the plan is before it is read', () => {
+    expect(drawn()).toContain('2 steps');
+    expect(drawn([PLAN[0]], LEVERS)).toContain('1 step');
   });
 });
