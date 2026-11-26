@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { StoryWorkBlock, merchantsText, type StoryLever, type StoryPlanStep, type StoryWorkTokens } from './StoryWork';
+import {
+  StoryWorkBlock,
+  accountsText,
+  merchantsText,
+  reachText,
+  type StoryLever,
+  type StoryPlanStep,
+  type StoryWorkTokens,
+} from './StoryWork';
 
 // The words, without the styles MUI renders around them.
 const words = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
@@ -9,9 +17,9 @@ const words = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' 
 const TOKENS: StoryWorkTokens = {
   ink: '#1f2a3a',
   inkSoft: '#3a4658',
-  faint: '#9aa3b5',
+  muted: '#737d92',
+  hair: '#e8eaf0',
   hairSoft: '#eef0f5',
-  rMd: '12px',
 };
 
 const PLAN: StoryPlanStep[] = [
@@ -35,13 +43,15 @@ const LEVERS: StoryLever[] = [
     name: 'Visa Commercial Corporate Credit Card Not Present - CEDP',
     meaning: 'Send the extra invoice detail with the payment.',
     saving_display: '$7,606',
-    merchant_count: 12,
+    account_count: 12,
+    merchant_count: 19,
   },
   {
     lever_id: 'visa.enrich.cedp_business',
     name: 'Visa Commercial Small Business Credit Card Not Present - CEDP',
     meaning: '',
     saving_display: '$7,207',
+    account_count: 0,
     merchant_count: 0,
   },
 ];
@@ -71,11 +81,11 @@ describe('what a story takes', () => {
   it('shows the levers the money comes from', () => {
     const out = drawn();
 
-    expect(out).toContain('Where it comes from');
+    expect(out).toContain('The sources');
     expect(out).toContain('$7,606');
-    expect(out).toContain('Across 12 merchants');
-    // A lever the dashboard counted no merchants on says nothing about them.
-    expect(out).not.toContain('Across 0 merchants');
+    expect(out).toContain('12 accounts');
+    // A lever the dashboard counted nothing on says nothing about its reach.
+    expect(out).not.toContain('0 accounts');
   });
 
   it('is not a control, and carries no title or figure of its own', () => {
@@ -91,24 +101,42 @@ describe('what a story takes', () => {
     const out = drawn([]);
 
     expect(out).not.toContain('The plan');
-    expect(out).toContain('Where it comes from');
+    expect(out).toContain('The sources');
   });
 
   it('draws no heading at all for a story with neither', () => {
     const out = drawn([], []);
 
     expect(out).not.toContain('The plan');
-    expect(out).not.toContain('Where it comes from');
+    expect(out).not.toContain('The sources');
   });
 
-  it('counts merchants only on a lever', () => {
-    // One merchant is on several levers, so a count across the story would
-    // claim more merchants than the partner has.
-    expect(drawn()).not.toMatch(/\(\d+ merchants?\)/);
+  it('counts the reach only on a lever', () => {
+    // One account is on several levers, so a count across the story would
+    // claim more of them than the partner has.
+    expect(drawn()).not.toMatch(/\(\d+ accounts?\)/);
   });
 
-  it('counts one merchant in the singular', () => {
+  it('counts one of each in the singular, and separates the thousands', () => {
+    expect(accountsText(1)).toBe('1 account');
+    expect(accountsText(2)).toBe('2 accounts');
+    expect(accountsText(3567)).toBe('3,567 accounts');
     expect(merchantsText(1)).toBe('1 merchant');
-    expect(merchantsText(2)).toBe('2 merchants');
+    expect(merchantsText(7126)).toBe('7,126 merchants');
+  });
+
+  it('says accounts when the backend counted them', () => {
+    expect(reachText({ account_count: 12, merchant_count: 19 })).toBe('12 accounts');
+  });
+
+  it('falls back to merchants for a story drafted before accounts were counted', () => {
+    // An account holds one or more merchants, so printing the old merchant count
+    // under the word accounts would overstate the partner's reach.
+    expect(reachText({ merchant_count: 19 })).toBe('19 merchants');
+  });
+
+  it('says nothing at all when neither count is there', () => {
+    expect(reachText({})).toBe('');
+    expect(reachText({ account_count: 0, merchant_count: 0 })).toBe('');
   });
 });

@@ -22,15 +22,21 @@ import { Box, Typography } from '@mui/material';
  * backend supplied, turned into words.
  */
 
-/** One lever behind a story. The merchant count is a lever's alone: one
- * merchant is on several levers, so a count across the story above would claim
- * more merchants than the partner has. */
+/** One lever behind a story. The count is a lever's alone: one account is on
+ * several levers, so a count across the story above would claim more of them
+ * than the partner has.
+ *
+ * Reach is shown in accounts, because an account is what a partner manages and
+ * one of them holds one or more merchants. merchant_count is what the backend
+ * sent before accounts were counted, kept so a story drafted then still has a
+ * true figure rather than a number under a label that no longer fits. */
 export interface StoryLever {
   lever_id: string;
   name: string;
   meaning: string;
   saving_display: string;
-  merchant_count: number;
+  merchant_count?: number;
+  account_count?: number;
 }
 
 /** One line of a saving: where it goes, how much, and - on a lever, never on
@@ -63,29 +69,56 @@ export interface StoryPlanStep {
 export interface StoryWorkTokens {
   ink: string;
   inkSoft: string;
-  faint: string;
+  muted: string;
+  hair: string;
   hairSoft: string;
-  rMd: string;
 }
 
-/** A count a partner reads, with the noun to match it. */
-export const merchantsText = (count: number): string => (count === 1 ? '1 merchant' : `${count} merchants`);
+/** A count a partner reads, with the noun to match it and a separator, because
+ * a four-digit count with none misreads next to money that has one. */
+const counted = (count: number, one: string, many: string): string =>
+  `${count.toLocaleString('en-US')} ${count === 1 ? one : many}`;
+
+export const accountsText = (count: number): string => counted(count, 'account', 'accounts');
+
+export const merchantsText = (count: number): string => counted(count, 'merchant', 'merchants');
+
+/**
+ * How far one lever reaches, named for whatever the backend counted.
+ *
+ * Accounts when it counted accounts, merchants when the story predates that and
+ * only has the old figure. Never a guess between the two: one account holds one
+ * or more merchants, so printing a merchant count under the word accounts would
+ * overstate the reach of every partner whose merchants share accounts, and this
+ * is a figure on a partner's feed.
+ */
+export const reachText = (lever: Pick<StoryLever, 'account_count' | 'merchant_count'>): string => {
+  if (lever.account_count) return accountsText(lever.account_count);
+  if (lever.merchant_count) return merchantsText(lever.merchant_count);
+  return '';
+};
 
 /** What each owner is called in front of a partner. The backend validates to
  * the key; this is the only place the words live. */
 const OWNER: Record<StoryPlanStep['owner'], string> = {
   you: 'You',
   acquirer: 'Your acquirer',
-  merchants: 'Your merchants',
+  // The backend's key is still "merchants"; what a partner reads is accounts,
+  // which is the level they manage and the noun the rest of the app uses.
+  merchants: 'Your accounts',
 };
 
-const label = (color: string) => ({
-  fontSize: 10.5,
+/**
+ * A section heading, which is what these are. They were 10.5px uppercase in the
+ * palest ink the app has, which at 2.3:1 on the panel's own background is under
+ * half the contrast small text is meant to have: the two headings that say what
+ * a partner is looking at were the least readable thing on the page.
+ */
+const heading = (color: string) => ({
+  fontSize: 13.5,
   fontWeight: 700,
-  letterSpacing: '.075em',
-  textTransform: 'uppercase' as const,
   color,
-  lineHeight: 1.35,
+  lineHeight: 1.4,
 });
 
 export const StoryWorkBlock: React.FC<{
@@ -99,7 +132,7 @@ export const StoryWorkBlock: React.FC<{
   <Box sx={{ marginTop: '4px' }}>
     {plan.length > 0 && (
       <Box sx={{ marginTop: '16px' }}>
-        <Typography sx={label(tokens.faint)}>The plan</Typography>
+        <Typography sx={heading(tokens.ink)}>The plan</Typography>
         {plan.map((step, at) => (
           <Box
             // Two steps can read the same, so the position is the only key
@@ -134,8 +167,12 @@ export const StoryWorkBlock: React.FC<{
                   {step.detail}
                 </Typography>
               )}
+              {/* The acceptance line, which is the only thing on the step a
+                  partner can check off, so it is readable ink. What keeps it
+                  quieter than the detail above is its size, not a colour nobody
+                  can read: only the two words that frame it stay muted. */}
               {step.done_when && (
-                <Typography sx={{ fontSize: 12.5, color: tokens.faint, marginTop: '3px' }}>
+                <Typography sx={{ fontSize: 12.5, lineHeight: 1.5, color: tokens.inkSoft, marginTop: '4px' }}>
                   <Box
                     component="span"
                     sx={{
@@ -145,13 +182,16 @@ export const StoryWorkBlock: React.FC<{
                       padding: '1px 7px',
                       fontSize: 11,
                       fontWeight: 700,
-                      color: tokens.inkSoft,
+                      color: tokens.ink,
                       marginRight: '6px',
                     }}
                   >
                     {OWNER[step.owner]}
                   </Box>
-                  Done when {step.done_when}
+                  <Box component="span" sx={{ color: tokens.muted }}>
+                    Done when
+                  </Box>{' '}
+                  {step.done_when}
                 </Typography>
               )}
             </Box>
@@ -163,32 +203,49 @@ export const StoryWorkBlock: React.FC<{
     {levers.length > 0 && (
       <Box
         sx={{
-          marginTop: '16px',
-          borderTop: plan.length > 0 ? `1px solid ${tokens.hairSoft}` : 'none',
-          paddingTop: plan.length > 0 ? '14px' : 0,
+          marginTop: '26px',
+          borderTop: plan.length > 0 ? `1px solid ${tokens.hair}` : 'none',
+          paddingTop: plan.length > 0 ? '18px' : 0,
         }}
       >
-        <Typography sx={label(tokens.faint)}>Where it comes from</Typography>
-        {levers.map((lever) => (
-          <Box key={lever.lever_id} sx={{ marginTop: '9px' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}>
-              <Typography sx={{ fontSize: 13.5, lineHeight: 1.5, color: tokens.inkSoft }}>{lever.name}</Typography>
-              <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: tokens.ink, whiteSpace: 'nowrap' }}>
-                {lever.saving_display}
-              </Typography>
+        <Typography sx={heading(tokens.ink)}>The sources</Typography>
+        {/* One source per row, closed by a hairline. Every row used to be three
+            full-width blocks with the money floated against a name that wraps,
+            so the figures landed at a different height each time and nothing
+            marked where one source ended: four of them read as one paragraph of
+            near-identical card names. The right column owns the numbers now, so
+            the money can be read down without reading a single name. */}
+        {levers.map((lever, at) => {
+          const reach = reachText(lever);
+          return (
+            <Box
+              key={lever.lever_id}
+              sx={{
+                padding: '14px 0',
+                borderBottom: at < levers.length - 1 ? `1px solid ${tokens.hairSoft}` : 'none',
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'baseline' }}>
+                <Typography sx={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, color: tokens.ink }}>
+                  {lever.name}
+                </Typography>
+                <Box sx={{ textAlign: 'right', whiteSpace: 'nowrap', flex: 'none' }}>
+                  <Typography sx={{ fontSize: 15, fontWeight: 700, color: tokens.ink }}>
+                    {lever.saving_display}
+                  </Typography>
+                  {reach && (
+                    <Typography sx={{ fontSize: 11.5, color: tokens.muted, marginTop: '1px' }}>{reach}</Typography>
+                  )}
+                </Box>
+              </Box>
+              {lever.meaning && (
+                <Typography sx={{ fontSize: 13, lineHeight: 1.55, color: tokens.inkSoft, marginTop: '6px' }}>
+                  {lever.meaning}
+                </Typography>
+              )}
             </Box>
-            {lever.merchant_count > 0 && (
-              <Typography sx={{ fontSize: 12.5, color: tokens.faint, marginTop: '2px' }}>
-                Across {merchantsText(lever.merchant_count)}
-              </Typography>
-            )}
-            {lever.meaning && (
-              <Typography sx={{ fontSize: 13, lineHeight: 1.55, color: tokens.inkSoft, marginTop: '3px' }}>
-                {lever.meaning}
-              </Typography>
-            )}
-          </Box>
-        ))}
+          );
+        })}
       </Box>
     )}
   </Box>
