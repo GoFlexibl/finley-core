@@ -21,7 +21,7 @@ export {
 // comes from. Drawn by the partner app's feed and by the admin portal's
 // preview of it, which has to be the same markup or the preview is not a
 // preview.
-export { StoryWorkBlock, accountsText, merchantsText, reachText } from './components/StoryWork';
+export { StoryWorkBlock, accountsText, merchantsText, reachText, barWidth } from './components/StoryWork';
 export type { StoryLever, StoryKeeps, StoryPlanStep, StoryWorkTokens } from './components/StoryWork';
 
 // The chevron that opens something below it. Shared so neither app writes a
